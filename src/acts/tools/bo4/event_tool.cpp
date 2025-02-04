@@ -6,7 +6,7 @@
 #include <games/bo4/offsets.hpp>
 
 namespace {
-	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/events/schedule_pc.csv");
+	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/loot/loot_myshop.csv");
 	constexpr uint64_t start = 1545156000;
 	constexpr uint64_t end = 2147367600;
 	// string,int,int,string
@@ -16,9 +16,9 @@ namespace {
 		ImGui::SeparatorText("Event tool");
 
 		static const char* op1s[]{
-			"season_2_stream",
-			"season_3_stream",
-			"season_4_stream",
+			"camo_active_dlc1_masks_wrapper",
+			"camo_active_dlc1_ww2_wrapper",
+			"mastercraft_vampire_hunter",
 			"season_5_stream",
 			"season_6_stream",
 			"season_7_stream",
@@ -36,7 +36,7 @@ namespace {
 			"winter_event_stream",
 			"camo_active_dlc1_masks_wrapper_2crates_shop",
 			"shamrock_shock_and_awe_2019",
-			
+
 		};
 
 		static bool set2xp;
@@ -224,7 +224,7 @@ namespace {
 				}
 
 				StringTableEntry entry{};
-				entry.name.name = schedule_pc_csv;
+				entry.name.name = loot_myshop_csv;
 				entry.columnCount = 4;
 				entry.rowCount = (int32_t)events.size();
 
