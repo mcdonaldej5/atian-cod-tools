@@ -6,7 +6,7 @@
 #include <games/bo4/offsets.hpp>
 
 namespace {
-	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/loot/loot_myshop.csv");
+	constexpr uint64_t loot_myshop_csv = hash::Hash64("gamedata/loot/loot_myshop.csv");
 	constexpr uint64_t start = 1545156000;
 	constexpr uint64_t end = 2147367600;
 	// string,int,int,string
