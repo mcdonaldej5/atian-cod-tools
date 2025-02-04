@@ -30,6 +30,13 @@ namespace {
 			"summer_break_bundle",
 			"fourth_of_july_event_stream",
 			"labor_day_event_stream",
+			"halloween_event_stream",
+			"zm_halloween_event_2018",
+			"zm_winter_event_2018",
+			"winter_event_stream",
+			"camo_active_dlc1_masks_wrapper_2crates_shop",
+			"shamrock_shock_and_awe_2019",
+			
 		};
 
 		static bool set2xp;
@@ -124,6 +131,7 @@ namespace {
 				events.push_back("global_2xp_mp_client");
 				events.push_back("global_2xp_zm_server");
 				events.push_back("global_2xp_zm_client");
+				events.push_back("bribe_offer_2020");
 			}
 			if (set2wxp) {
 				events.push_back("global_2wxp_mp_server");
