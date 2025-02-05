@@ -6,7 +6,7 @@
 #include <games/bo4/offsets.hpp>
 
 namespace {
-	constexpr uint64_t loot_myshop_csv = hash::Hash64("gamedata/loot/loot_myshop.csv");
+	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/events/schedule_pc.csv");
 	constexpr uint64_t start = 1545156000;
 	constexpr uint64_t end = 2147367600;
 	// string,int,int,string
@@ -16,9 +16,9 @@ namespace {
 		ImGui::SeparatorText("Event tool");
 
 		static const char* op1s[]{
-			"camo_active_dlc1_masks_wrapper",
-			"camo_active_dlc1_ww2_wrapper",
-			"mastercraft_vampire_hunter",
+			"season_2_stream",
+			"season_3_stream",
+			"season_4_stream",
 			"season_5_stream",
 			"season_6_stream",
 			"season_7_stream",
@@ -34,7 +34,6 @@ namespace {
 			"zm_halloween_event_2018",
 			"zm_winter_event_2018",
 			"winter_event_stream",
-			"camo_active_dlc1_masks_wrapper_2crates_shop",
 			"shamrock_shock_and_awe_2019",
 
 		};
@@ -131,7 +130,7 @@ namespace {
 				events.push_back("global_2xp_mp_client");
 				events.push_back("global_2xp_zm_server");
 				events.push_back("global_2xp_zm_client");
-				events.push_back("bribe_offer_2020");
+				events.push_back("zm_winter_event_2018");
 			}
 			if (set2wxp) {
 				events.push_back("global_2wxp_mp_server");
@@ -142,10 +141,13 @@ namespace {
 			if (set2m) {
 				events.push_back("global_2x_merits_wz_server");
 				events.push_back("global_2x_merits_wz_client");
+				events.push_back("zm_halloween_event_2018");
 			}
 			if (set2nb) {
 				events.push_back("global_2xnp_zm_server");
 				events.push_back("global_2xnp_zm_client");
+				events.push_back("zm_lab_titanium_treble_slot_1");
+				events.push_back("zm_lab_tungsten_tripler_slot_2");
 			}
 			if (set2xptier) {
 				events.push_back("global_2xtier_mp_server");
@@ -224,7 +226,7 @@ namespace {
 				}
 
 				StringTableEntry entry{};
-				entry.name.name = loot_myshop_csv;
+				entry.name.name = schedule_pc_csv;
 				entry.columnCount = 4;
 				entry.rowCount = (int32_t)events.size();
 
