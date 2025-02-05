@@ -6,7 +6,7 @@
 #include <games/bo4/offsets.hpp>
 
 namespace {
-	constexpr uint64_t itemshop_slot_1_pc_csv = hash::Hash64("gamedata/events/itemshop_slot_1_pc.csv");
+	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/events/schedule_pc.csv");
 	constexpr uint64_t start = 1545156000;
 	constexpr uint64_t end = 2147367600;
 	// string,int,int,string
@@ -16,8 +16,8 @@ namespace {
 		ImGui::SeparatorText("Event tool");
 
 		static const char* op1s[]{
-			"camo_active_dlc1_ww2_wrapper",
-			"camo_active_dlc1_masks_wrapper",
+			"season_2_stream",
+			"season_3_stream",
 			"season_4_stream",
 			"season_5_stream",
 			"season_6_stream",
@@ -120,8 +120,8 @@ namespace {
 			std::vector<const char*> events{};
 
 			// I guess it's mandatory to have them
-			events.push_back("camo_active_dlc1_ww2_wrapper");
-			events.push_back("camo_active_dlc1_masks_wrapper");
+			events.push_back("digital_refresh_v3");
+			events.push_back("reserves_drop_12");
 			events.push_back("bribe_offer_holidays_2019");
 			events.push_back("reserve_completion_meter");
 
@@ -130,6 +130,7 @@ namespace {
 				events.push_back("global_2xp_mp_client");
 				events.push_back("global_2xp_zm_server");
 				events.push_back("global_2xp_zm_client");
+				events.push_back("zm_winter_event_2018");
 			}
 			if (set2wxp) {
 				events.push_back("global_2wxp_mp_server");
@@ -141,7 +142,6 @@ namespace {
 				events.push_back("global_2x_merits_wz_server");
 				events.push_back("global_2x_merits_wz_client");
 				events.push_back("zm_halloween_event_2018");
-				events.push_back("global_2x_merits_wz_client");
 			}
 			if (set2nb) {
 				events.push_back("global_2xnp_zm_server");
@@ -226,8 +226,8 @@ namespace {
 				}
 
 				StringTableEntry entry{};
-				entry.name.name = itemshop_slot_1_pc_csv;
-				entry.columnCount = 3;
+				entry.name.name = schedule_pc_csv;
+				entry.columnCount = 4;
 				entry.rowCount = (int32_t)events.size();
 
 				allocatedSize = rfile.size();
