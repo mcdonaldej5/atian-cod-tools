@@ -469,10 +469,16 @@ namespace {
 			ImGui::EndCombo();
 		}
 		if (ImGui::Button("Set map")) {
-			Cbuf_AddText(0, "launchgame");
+			// LobbySetMap(LobbyType, char const*).text	000000000398E420	00000010	00000028		R	.	.	.	..T	.
+			CallLobbyFunction(0x398E420, 0, map, log);
 		}
 
-		
+		if (ImGui::Button("Launch Game"))
+					{
+						Cbuf_AddText(0, "launchgame");
+					}
+
+
 		ImGui::SeparatorText("Blackout config");
 
 		if (ImGui::BeginListBox("Items")) {
@@ -524,4 +530,4 @@ namespace {
 		}
 	}
 	ADD_TOOL_NUI(bo4_lobby_tool, "BO4 Lobby tool", bo4_lobby_tool);
-}
+}F
