@@ -417,6 +417,26 @@ namespace {
 		}
 	}
 
+	void Cbuf_AddText(const char* text)
+{
+	uintptr_t s_cmd_textArray = Decryption::GetCmdTextArray();
+	if (!s_cmd_textArray)
+		return;
+ 
+	int textLength = strlen(text);
+	int cmdsize = m.ReadMemory<int>(s_cmd_textArray + 0x10004);
+ 
+	if (textLength + cmdsize > m.ReadMemory<DWORD>(s_cmd_textArray + 0x10000)) // CmdText::maxsize
+		return;
+ 
+	auto writeStringToMemory = [](uintptr_t address, const char* str) -> void {
+		for (int i = 0; str[i]; ++i)
+			m.WriteMemory<char>(address + i, str[i]);
+	};
+ 
+	writeStringToMemory(s_cmd_textArray + cmdsize, text);
+	m.WriteMemory<DWORD>(s_cmd_textArray + 0x10004, m.ReadMemory<DWORD>(s_cmd_textArray + 0x10004) + textLength);
+}
 
 	void bo4_lobby_tool() {
 		tool::nui::NuiUseDefaultWindow dw{};
@@ -468,17 +488,11 @@ namespace {
 			}
 			ImGui::EndCombo();
 		}
-		if (ImGui::Button("Set map")) {
-			// LobbySetMap(LobbyType, char const*).text	000000000398E420	00000010	00000028		R	.	.	.	..T	.
-			CallLobbyFunction(0x398E420, 0, map, log);
+		if (ImGui::Button("Force Start")) {
+			Cbuf_AddText("launchgame;");
 		}
 
-		if (ImGui::Button("Launch Game"))
-					{
-						Cbuf_AddText(0, "launchgame");
-					}
-
-
+		
 		ImGui::SeparatorText("Blackout config");
 
 		if (ImGui::BeginListBox("Items")) {
@@ -530,4 +544,4 @@ namespace {
 		}
 	}
 	ADD_TOOL_NUI(bo4_lobby_tool, "BO4 Lobby tool", bo4_lobby_tool);
-}F
+}
