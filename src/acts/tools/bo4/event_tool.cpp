@@ -124,6 +124,8 @@ namespace {
 			events.push_back("reserves_drop_12");
 			events.push_back("bribe_offer_holidays_2019");
 			events.push_back("reserve_completion_meter");
+		events.push_back("zm_halloween_event_2018_ON");
+			events.push_back("set zm_active_event_calling 1");
 
 			if (set2xp) {
 				events.push_back("global_2xp_mp_server");
@@ -131,6 +133,9 @@ namespace {
 				events.push_back("global_2xp_zm_server");
 				events.push_back("global_2xp_zm_client");
 				events.push_back("zm_winter_event_2018");
+				events.push_back("zm_active_event_calling 1");
+				events.push_back("zm_active_event_calling");
+
 			}
 			if (set2wxp) {
 				events.push_back("global_2wxp_mp_server");
