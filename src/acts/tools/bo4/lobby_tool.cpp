@@ -473,6 +473,9 @@ namespace {
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
 
+		if (ImGui::Button("Force Start")) {
+			CfgCbuf("launchgame");
+		}
 		ImGui::SeparatorText("Blackout config");
 
 		if (ImGui::BeginListBox("Items")) {
