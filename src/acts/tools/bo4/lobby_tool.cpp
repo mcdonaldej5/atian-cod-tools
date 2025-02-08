@@ -272,7 +272,7 @@ namespace {
 		"1wzenablezweihander\0Zweihander",
 	};
 	static const char* wzgts2[]{
-		"1wzenablecowardswayout\0Cowards wayout",
+		"launchgame\0Cowards wayout",
 		"0skiplaststand\0Skip last stand",
 		"0wzavogadro\0Spawn avogadro",
 		"0wzavogadroeverywhere\0Spawn avogadro everywhere",
@@ -473,7 +473,6 @@ namespace {
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
 
-		
 		ImGui::SeparatorText("Blackout config");
 
 		if (ImGui::BeginListBox("Items")) {
@@ -525,4 +524,4 @@ namespace {
 		}
 	}
 	ADD_TOOL_NUI(bo4_lobby_tool, "BO4 Lobby tool", bo4_lobby_tool);
-}F
+}
