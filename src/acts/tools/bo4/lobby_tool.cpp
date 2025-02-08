@@ -47,7 +47,7 @@ namespace {
 		"koth_bb\0Multiplayer/Hardpoint (BB)",
 		"koth_cwl\0Multiplayer/Hardpoint (CWL)",
 		"bounty\0Multiplayer/Heist",
-		"bounty_hc\0Multiplayer/Heist (HC)",
+		"launchgame\0Multiplayer/Heist (HC)",
 		"infect\0Multiplayer/Infected",
 		"infect_hc\0Multiplayer/Infected (HC)",
 		"prop\0Multiplayer/Prop hunt",
