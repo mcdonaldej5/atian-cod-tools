@@ -284,6 +284,8 @@ namespace {
 		//"1deathcircle\0Enable death circle",
 	};
 
+	const static auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
+
 	void CallLobbyFunction(uintptr_t loc, int lobby, const char* val, std::string& logs) {
 		Process bo4 = L"BlackOps4.exe";
 
@@ -471,6 +473,11 @@ namespace {
 		if (ImGui::Button("Set map")) {
 			// LobbySetMap(LobbyType, char const*).text	000000000398E420	00000010	00000028		R	.	.	.	..T	.
 			CallLobbyFunction(0x398E420, 0, map, log);
+		}
+		
+		if (ImGui::Button("Launch Game"))
+		{
+			Cbuf_AddText(0, "launchgame");
 		}
 
 		ImGui::SeparatorText("Blackout config");
