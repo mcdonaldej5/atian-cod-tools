@@ -5,11 +5,7 @@
 #include <games/bo4/pool.hpp>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
-
-extern uintptr_t dwProcessBase;
-
-static const auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
-
+#include <common.h>
 
 namespace {
 	static const char* gametypes[]{
