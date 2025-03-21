@@ -5,7 +5,6 @@
 #include <games/bo4/pool.hpp>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
-#include <common.h>
 
 namespace {
 	static const char* gametypes[]{
