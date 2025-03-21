@@ -6,6 +6,11 @@
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
+extern uintptr_t dwProcessBase;
+
+static const auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
+
+
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
@@ -284,8 +289,7 @@ namespace {
 		//"1deathcircle\0Enable death circle",
 	};
 
-	static const auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
-
+	
 	void CallLobbyFunction(uintptr_t loc, int lobby, const char* val, std::string& logs) {
 		Process bo4 = L"BlackOps4.exe";
 
