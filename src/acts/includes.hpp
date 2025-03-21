@@ -36,16 +36,3 @@ typedef bool(__fastcall* WorldPosToScreenPosT)(int localClientNum, float* worldP
 typedef __int64(__fastcall* CG_PredictPlayerStateT)(unsigned int localClientNum);
 typedef __int64(__fastcall* CL_WritePacketT)(unsigned int localClientNum);
 typedef const char* (__fastcall* CL_GetConfigStringT)(int);
-extern dwNetadrToCommonAddrT dwNetadrToCommonAddr;
-extern NET_OutOfBandPrintT NET_OutOfBandPrint;
-extern Com_GetClientDObjT Com_GetClientDObj;
-extern CG_DObjGetWorldTagPosInternalT CG_DObjGetWorldTagPosInternal;
-extern tCG_CanSeeFriendlyHeadTrace CG_CanSeeFriendlyHeadTrace;
-extern CG_IsEntityFriendlyNotEnemyT CG_IsEntityFriendlyNotEnemy;
-extern draw2DInternalT draw2DInternal;
-extern CG_PredictPlayerStateT CG_PredictPlayerState;
-extern CL_WritePacketT CL_WritePacket;
-extern CG_BulletHitEventT CG_BulletHitEvent;
-extern WorldPosToScreenPosT WorldPosToScreenPos;
-extern CL_GetConfigStringT CL_GetConfigString;
-extern DWORD_PTR nameBuffer;
