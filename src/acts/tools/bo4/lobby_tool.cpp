@@ -284,7 +284,7 @@ namespace {
 		//"1deathcircle\0Enable death circle",
 	};
 
-	const static auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
+	static const auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
 
 	void CallLobbyFunction(uintptr_t loc, int lobby, const char* val, std::string& logs) {
 		Process bo4 = L"BlackOps4.exe";
