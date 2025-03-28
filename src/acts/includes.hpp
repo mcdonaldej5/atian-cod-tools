@@ -15,8 +15,7 @@
 
 
 extern uintptr_t dwProcessBase;
-extern uintptr_t cgArray;
-extern uintptr_t cg_entitiesArray;
 
-const static auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
-const static auto Cmd_ExecuteSingleCommand = reinterpret_cast<std::uintptr_t(__fastcall*)(int, int, const char* text, bool)>(dwProcessBase + 0x3CF4B80);
+
+const static auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(const char*)>(dwProcessBase + 0x3CDE880);
+
