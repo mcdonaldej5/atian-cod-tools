@@ -27,3 +27,12 @@ extern float rgb_speed;
 const static auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);
 const static auto Cmd_ExecuteSingleCommand = reinterpret_cast<std::uintptr_t(__fastcall*)(int, int, const char* text, bool)>(dwProcessBase + 0x3CDE880);
 
+typedef __int64(__fastcall* Com_GetClientDObjT)(int* handle, int a2);
+typedef __int64(__fastcall* CG_DObjGetWorldTagPosInternalT)(__int64 centity, __int64 DObj, int tag, float* whatever, float* pos, int something);
+typedef bool(__fastcall* tCG_CanSeeFriendlyHeadTrace)(int localClientNum, __int64 centity_t, __int64 start, __int64 end);
+typedef bool(__fastcall* CG_IsEntityFriendlyNotEnemyT)(int localClientNum, __int64 centity_t);
+typedef char(__fastcall* draw2DInternalT)(int);
+typedef bool(__fastcall* WorldPosToScreenPosT)(int localClientNum, float* worldPos, float* out);
+typedef __int64(__fastcall* CG_PredictPlayerStateT)(unsigned int localClientNum);
+typedef __int64(__fastcall* CL_WritePacketT)(unsigned int localClientNum);
+typedef const char* (__fastcall* CL_GetConfigStringT)(int);
