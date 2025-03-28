@@ -476,7 +476,7 @@ namespace {
 		
 		if (ImGui::Button("Launch Game"))
 		{
-			Cmd_ExecuteSingleCommand("launchgame");
+			Cbuf_AddText("launchgame");
 		}
 
 		ImGui::SeparatorText("Blackout config");
