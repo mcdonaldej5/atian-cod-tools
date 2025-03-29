@@ -474,10 +474,6 @@ namespace {
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
 		
-		if (ImGui::Button("Launch Game"))
-		{
-			Cbuf_AddText("launchgame");
-		}
 
 		ImGui::SeparatorText("Blackout config");
 
