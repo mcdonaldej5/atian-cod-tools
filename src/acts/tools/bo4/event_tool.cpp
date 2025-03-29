@@ -6,7 +6,7 @@
 #include <games/bo4/offsets.hpp>
 
 namespace {
-	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/events/schedule_pc.csv");
+	constexpr uint64_t itemshop_slot_1_pc = hash::Hash64("gamedata/events/itemshop_slot_1_pc.csv");
 	constexpr uint64_t start = 1545156000;
 	constexpr uint64_t end = 2147367600;
 	// string,int,int,string
@@ -16,7 +16,7 @@ namespace {
 		ImGui::SeparatorText("Event tool");
 
 		static const char* op1s[]{
-			"season_2_stream",
+			"camo_active_dlc1_ww2_wrapper",
 			"season_3_stream",
 			"season_4_stream",
 			"season_5_stream",
@@ -115,13 +115,6 @@ namespace {
 
 			// I guess it's mandatory to have them
 			events.push_back("zm_active_event_calling");
-			events.push_back("zm_halloween_event_2018");
-			events.push_back("reserves_drop_12");
-			events.push_back("bribe_offer_holidays_2019");
-			events.push_back("reserve_completion_meter");
-			events.push_back("bribe_offer_launch");
-			events.push_back("half_off_pick_weapon_bribes");
-			events.push_back("free_pick_weapon_bribe_may_2020");
 			
 
 			if (set2xp) {
@@ -204,11 +197,11 @@ namespace {
 					uintptr_t unk56{};
 				}; static_assert(sizeof(StringTableEntry) == 0x40);
 
-				size_t cells{ utils::Allocate(rfile, sizeof(StringTableCell) * 4 * events.size()) };
+				size_t cells{ utils::Allocate(rfile, sizeof(StringTableCell) * 3 * events.size()) };
 
 				for (size_t i = 0; i < events.size(); i++) {
 					size_t evLoc{ utils::WriteString(rfile, events[i]) };
-					StringTableCell* row{ &reinterpret_cast<StringTableCell*>(&rfile[cells])[i * 4] };
+					StringTableCell* row{ &reinterpret_cast<StringTableCell*>(&rfile[cells])[i * 3] };
 
 					row[0].type = STC_TYPE_STRING;
 					*(size_t*)&(row[0].value) = evLoc;
@@ -216,13 +209,11 @@ namespace {
 					*(int64_t*)&(row[1].value) = start;
 					row[2].type = STC_TYPE_INT;
 					*(int64_t*)&(row[2].value) = end;
-					row[3].type = STC_TYPE_STRING;
-					*(size_t*)&(row[3].value) = allLoc;
 				}
 
 				StringTableEntry entry{};
-				entry.name.name = schedule_pc_csv;
-				entry.columnCount = 4;
+				entry.name.name = itemshop_slot_1_pc;
+				entry.columnCount = 3;
 				entry.rowCount = (int32_t)events.size();
 
 				allocatedSize = rfile.size();
@@ -236,8 +227,8 @@ namespace {
 				entry.values = allocated + cells;
 				StringTableCell* row{ reinterpret_cast<StringTableCell*>(&rfile[cells]) };
 				for (size_t i = 0; i < events.size(); i++) {
-					*(uintptr_t*)row[i * 4].value += allocated;
-					*(uintptr_t*)row[i * 4 + 3].value += allocated;
+					*(uintptr_t*)row[i * 3].value += allocated;
+					*(uintptr_t*)row[i * 3 + 2].value += allocated;
 				}
 
 				// write data
