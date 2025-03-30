@@ -1,8 +1,7 @@
 #pragma once
+#include "includes.h"
 
 
-
-using namespace std;
 
 extern uintptr_t dwProcessBase;
 
