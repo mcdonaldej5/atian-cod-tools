@@ -220,7 +220,7 @@ namespace memapi {
 			std::stringstream ss{};
 
 			for (size_t i = 0; i < size; i++) {
-				ss << " " << std::format("{:02x}", (int)((byte*)fullInt)[i]);
+				ss << " " << std::format("{:02x}", (int)((::byte*)fullInt)[i]);
 			}
 
 			LOG_TRACE("Code:{}", ss.str());

@@ -343,7 +343,7 @@ namespace {
 				uintptr_t pool;
 				uint32_t itemSize;
 				int32_t itemCount;
-				byte isSingleton;
+				::byte isSingleton;
 				int32_t itemAllocCount;
 				uintptr_t freeHead;
 			};
@@ -359,7 +359,7 @@ namespace {
 
 			RawFileEntry entry{};
 			constexpr const char* hookCfgName = "gamedata/configs/common/default_systemlink.cfg";
-			entry.name = hash::Hash64(hookCfgName);
+			entry.name = ::hash::Hash64(hookCfgName);
 			entry.buffer = alloc;
 			entry.size = sizeOut;
 
