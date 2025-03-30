@@ -24,6 +24,7 @@ namespace {
 			"season_6_stream",
 			"season_7_stream",
 			"season_8_stream",
+			"zm_daily_calling_1",
 		};
 		static const char* op2s[]{
 			"season_2_bonus_stream",
@@ -31,6 +32,10 @@ namespace {
 			"fourth_of_july_event_stream",
 			"labor_day_event_stream",
 			"halloween_event_stream",
+			"zm_halloween_event",
+			"zm_halloween_event_2018",
+			"zm_winter_event",
+			"zm_winter_event_2018",
 		};
 		
 		static bool set2xp;
