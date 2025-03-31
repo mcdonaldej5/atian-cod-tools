@@ -3,6 +3,7 @@
 #include <core/config.hpp>
 #include <tools/pool.hpp>
 #include <games/bo4/pool.hpp>
+#include <games/bo4/common.h>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
@@ -473,7 +474,10 @@ namespace {
 			// LobbySetMap(LobbyType, char const*).text	000000000398E420	00000010	00000028		R	.	.	.	..T	.
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
-	
+		if (ImGui::Button("Launch Game"))
+		{
+			Cbuf_AddText(0, "launchgame");
+		}
 
 		ImGui::SeparatorText("Blackout config");
 
