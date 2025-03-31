@@ -45,15 +45,16 @@ bool attachToGame() {
 }
 
 
-void cbuf_addtext(const char* text) {
+void cbuf_addtext(const char* text& logs) {
 
 
     typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
+	uintptr_t baseAddress = GetModuleBaseAddress(L"BlackOps4.exe"); 
     t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
 		
 
 	if (!Cbuf_AddText) {
-        std::cerr << "Error: Cbuf_AddText function not found!" << std::endl;
+        logs = "Error: Cbuf_AddText function not found!";
         return;
     }
 
@@ -64,6 +65,8 @@ void cbuf_addtext(const char* text) {
     
 
     // Call the function to execute the command in the game
+
+	logs = "Executing command:";
 	Cbuf_AddText(0, "launchgame");
 }
 }
@@ -539,6 +542,8 @@ namespace {
 			// LobbySetMap(LobbyType, char const*).text	000000000398E420	00000010	00000028		R	.	.	.	..T	.
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
+
+		ImGui::Begin("Game Controls");
 		if (ImGui::Button("Launch Game"))
 		{
 			cbuf_addtext("launchgame");
@@ -549,7 +554,8 @@ namespace {
 			cbuf_addtext("fastrestart");
 			
 		}
-
+		ImGui::End();
+		
 		ImGui::SeparatorText("Blackout config");
 
 		if (ImGui::BeginListBox("Items")) {
