@@ -32,10 +32,7 @@ template<class T> T __ROL__(T value, int count)
 
 inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)value, count); }
 
-std::uintptr_t dwProcessBase = GetModuleBaseAddress(L"BlackOps4.exe");
-if (!dwProcessBase) {
-    std::cerr << "Error: Failed to get process base address!" << std::endl;
-}
+uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 
 
 

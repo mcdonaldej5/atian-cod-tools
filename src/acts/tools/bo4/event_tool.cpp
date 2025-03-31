@@ -27,6 +27,7 @@ namespace {
 			"season_8_stream",
 			"halloween_event_stream",
 			"winter_event_stream",
+			"shamrock_shock_and_awe_2019",
 		};
 		static const char* op2s[]{
 			"",
@@ -35,12 +36,16 @@ namespace {
 			"fourth_of_july_event_stream",
 			"labor_day_event_stream",
 			"halloween_event_stream",
+			"winter_event_stream",
+			"shamrock_shock_and_awe_2019",
+			"shamrock_free_bundle_2019",
 			"zm_halloween_event",
 			"zm_halloween_event_2018",
 			"zm_winter_event",
 			"zm_winter_event_2018",
 			"zm_halloween_event_2018_ON",
 			"zm_winter_event_2018_ON",
+			"community_event_june_2019",
 		};
 		
 		static bool set2xp;
@@ -129,16 +134,14 @@ namespace {
 			events.push_back("reserves_drop_12");
 			events.push_back("sunset_features");
 			events.push_back("reserve_completion_meter");
-			events.push_back("bribe_offer_launch");
+			events.push_back("bribe_offer_holidays_2019");
 			events.push_back("half_off_pick_weapon_bribes");
-			events.push_back("free_pick_weapon_bribe_may_2020");
 			events.push_back("zm_daily_calling_2");
 			events.push_back("set zm_active_daily_calling 2");
 			events.push_back("zm_active_event_calling");
 			events.push_back("set zm_active_event_calling 2");
 			events.push_back("zm_lab_titanium_treble_slot_1");
 			events.push_back("zm_lab_tungsten_tripler_slot_2");
-			events.push_back("zm_lab_150_np_discount");
 			
 
 			if (set2xp) {
