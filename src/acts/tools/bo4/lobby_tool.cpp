@@ -536,12 +536,18 @@ namespace {
 		}
 		if (ImGui::Button("Launch Game"))
 		{
-			cbuf_addtext("launchgame");
+			int main() {
+				cbuf_addtext("launchgame");
+				return 0;
+			}
 			
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
-			cbuf_addtext("fastrestart");
+			int main() {
+				cbuf_addtext("fastrestart");
+				return 0;
+			}
 			
 		}
 
@@ -565,8 +571,11 @@ namespace {
 			for (size_t i = 0; i < ARRAYSIZE(wzgts); i++) {
 				gtsCfg << "gts " << (wzgts[i] + 1) << " " << (gts[i] ? '1' : '0') << "\n";
 			}
-			
-			cbuf_addtext("launchgame");
+
+			int main() {
+				cbuf_addtext("launchgame");
+				return 0;
+			}
 
 			CfgCbuf(gtsCfg.str(), log);
 
