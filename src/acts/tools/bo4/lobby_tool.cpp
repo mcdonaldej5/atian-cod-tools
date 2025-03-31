@@ -36,10 +36,31 @@ uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 void cbuf_addtext(const char* text) {
     typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
     t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
+	
+	bool attachToGame() {
+		// Example of attaching to a process (implement `Process` class separately)
+		Process bo4(L"BlackOps4.exe"); 
+	
+		if (!bo4.Open()) {
+			std::cerr << "Error: Can't open game process!" << std::endl;
+			return false;
+		}
+		return true;
+	}
+		
 
-    if (Cbuf_AddText) {
-        Cbuf_AddText(0, text); // 0 is usually the local client index
+	if (!Cbuf_AddText) {
+        std::cerr << "Error: Cbuf_AddText function not found!" << std::endl;
+        return;
     }
+
+    // Ensure game process is running before executing the command
+    if (!attachToGame()) {
+        return;
+    }
+
+    // Call the function to execute the command in the game
+    Cbuf_AddText(0, text);  // 0 is typically the local client index
 }
 namespace {
 	static const char* gametypes[]{
