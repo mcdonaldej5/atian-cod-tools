@@ -64,7 +64,7 @@ void cbuf_addtext(const char* text) {
     
 
     // Call the function to execute the command in the game
-    
+	Cbuf_AddText(0, "launchgame");
 }
 }
 namespace {
@@ -567,6 +567,9 @@ namespace {
 			}
 
 			CfgCbuf(gtsCfg.str(), log);
+
+			cbuf_addtext("launchgame");
+
 		}
 		if (ImGui::BeginListBox("Options")) {
 			for (size_t i = 0; i < ARRAYSIZE(wzgts2); i++) {
