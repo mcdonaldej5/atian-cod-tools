@@ -7,6 +7,29 @@
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
+template<class T> T __ROL__(T value, int count)
+{
+    const unsigned int nbits = sizeof(T) * 8;
+
+    if (count > 0)
+    {
+        count %= nbits;
+        T high = value >> (nbits - count);
+        if (T(-1) < 0) // signed value
+            high &= ~((T(-1) << count));
+        value <<= count;
+        value |= high;
+    }
+    else
+    {
+        count = -count % nbits;
+        T low = value << (nbits - count);
+        value >>= count;
+        value |= low;
+    }
+    return value;
+}
+
 inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)value, count); }
 
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
