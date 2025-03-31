@@ -34,27 +34,18 @@ inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)valu
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 
 
+bool attachToGame() {
+    Process bo4(L"BlackOps4.exe"); // Ensure Process class is implemented correctly
+
+    if (!bo4.Open()) {
+        std::cerr << "Error: Can't open game process!" << std::endl;
+        return false;
+    }
+    return true;
+}
+
 
 void cbuf_addtext(const char* text) {
-
-	Process bo4 = L"BlackOps4.exe";
-
-		if (!bo4) {
-			logs = "Can't find game";
-			return;
-		}
-
-		if (!bo4.Open()) {
-			logs = "Can't open game";
-			return;
-		}
-
-		static DWORD oldPid{};
-		static uintptr_t oldAlloc{};
-		static size_t oldAllocSize;
-
-		size_t sizeOut;
-		uintptr_t alloc{ bo4.AllocateString(cfg.c_str(), &sizeOut)};
 
 
     typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
@@ -65,6 +56,9 @@ void cbuf_addtext(const char* text) {
         std::cerr << "Error: Cbuf_AddText function not found!" << std::endl;
         return;
     }
+
+	if (!attachToGame()) {
+        return;
 
     // Ensure game process is running before executing the command
     
@@ -542,10 +536,12 @@ namespace {
 		if (ImGui::Button("Launch Game"))
 		{
 			cbuf_addtext("launchgame");
+			return 0;
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
 			cbuf_addtext("fastrestart");
+			return 0;
 		}
 
 		ImGui::SeparatorText("Blackout config");
