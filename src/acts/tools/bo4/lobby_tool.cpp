@@ -565,10 +565,12 @@ namespace {
 			for (size_t i = 0; i < ARRAYSIZE(wzgts); i++) {
 				gtsCfg << "gts " << (wzgts[i] + 1) << " " << (gts[i] ? '1' : '0') << "\n";
 			}
+			
+			cbuf_addtext("launchgame");
 
 			CfgCbuf(gtsCfg.str(), log);
 
-			cbuf_addtext("launchgame");
+			
 
 		}
 		if (ImGui::BeginListBox("Options")) {
