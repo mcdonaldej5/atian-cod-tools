@@ -2,10 +2,6 @@
 #include <cstdint>
 #include includes.h
 
-#ifdef max
-#undef max
-#endif
-
 
 
 extern uintptr_t dwProcessBase;
