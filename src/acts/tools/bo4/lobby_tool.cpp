@@ -66,6 +66,7 @@ void cbuf_addtext(const char* text) {
     // Call the function to execute the command in the game
     
 }
+}
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
