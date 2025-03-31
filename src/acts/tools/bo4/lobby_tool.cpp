@@ -510,7 +510,11 @@ namespace {
 		}
 		if (ImGui::Button("Launch Game"))
 		{
-			cbuf_addtext(0, "launchgame");
+			cbuf_addtext("launchgame");
+		}
+		if (ImGui::Button("Fast Restart"))
+		{
+			cbuf_addtext("fastrestart");
 		}
 
 		ImGui::SeparatorText("Blackout config");
