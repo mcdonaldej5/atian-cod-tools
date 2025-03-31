@@ -33,20 +33,20 @@ inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)valu
 
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 
+bool attachToGame() {
+	// Example of attaching to a process (implement `Process` class separately)
+	Process bo4(L"BlackOps4.exe"); 
+
+	if (!bo4.Open()) {
+		std::cerr << "Error: Can't open game process!" << std::endl;
+		return false;
+	}
+	return true;
+}
+
 void cbuf_addtext(const char* text) {
     typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
     t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
-	
-	bool attachToGame() {
-		// Example of attaching to a process (implement `Process` class separately)
-		Process bo4(L"BlackOps4.exe"); 
-	
-		if (!bo4.Open()) {
-			std::cerr << "Error: Can't open game process!" << std::endl;
-			return false;
-		}
-		return true;
-	}
 		
 
 	if (!Cbuf_AddText) {
