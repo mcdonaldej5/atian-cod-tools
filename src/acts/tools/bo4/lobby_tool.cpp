@@ -3,7 +3,6 @@
 #include <core/config.hpp>
 #include <tools/pool.hpp>
 #include <games/bo4/pool.hpp>
-#include <games/bo4/common.h>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
@@ -34,6 +33,14 @@ inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)valu
 
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 
+void cbuf_addtext(const char* text) {
+    typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
+    t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
+
+    if (Cbuf_AddText) {
+        Cbuf_AddText(0, text); // 0 is usually the local client index
+    }
+}
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
