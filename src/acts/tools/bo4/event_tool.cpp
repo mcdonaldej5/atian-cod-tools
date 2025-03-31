@@ -16,6 +16,7 @@ namespace {
 		ImGui::SeparatorText("Event tool");
 
 		static const char* op1s[]{
+			"",
 			"season_1_stream",
 			"season_2_stream",
 			"season_3_stream",
@@ -24,9 +25,11 @@ namespace {
 			"season_6_stream",
 			"season_7_stream",
 			"season_8_stream",
-			"zm_daily_calling_1",
+			"halloween_event_stream",
+			"winter_event_stream",
 		};
 		static const char* op2s[]{
+			"",
 			"season_2_bonus_stream",
 			"summer_break_bundle",
 			"fourth_of_july_event_stream",
@@ -36,6 +39,8 @@ namespace {
 			"zm_halloween_event_2018",
 			"zm_winter_event",
 			"zm_winter_event_2018",
+			"zm_halloween_event_2018_ON",
+			"zm_winter_event_2018_ON",
 		};
 		
 		static bool set2xp;
@@ -121,14 +126,19 @@ namespace {
 			std::vector<const char*> events{};
 
 			// I guess it's mandatory to have them
-			events.push_back("zm_active_event_calling");
-			events.push_back("zm_halloween_event_2018");
 			events.push_back("reserves_drop_12");
 			events.push_back("sunset_features");
 			events.push_back("reserve_completion_meter");
 			events.push_back("bribe_offer_launch");
 			events.push_back("half_off_pick_weapon_bribes");
 			events.push_back("free_pick_weapon_bribe_may_2020");
+			events.push_back("zm_daily_calling_2");
+			events.push_back("set zm_active_daily_calling 2");
+			events.push_back("zm_active_event_calling");
+			events.push_back("set zm_active_event_calling 2");
+			events.push_back("zm_lab_titanium_treble_slot_1");
+			events.push_back("zm_lab_tungsten_tripler_slot_2");
+			events.push_back("zm_lab_150_np_discount");
 			
 
 			if (set2xp) {

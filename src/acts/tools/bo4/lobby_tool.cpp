@@ -67,6 +67,11 @@ void cbuf_addtext(const char* text) {
 	Cbuf_AddText(0, "launchgame");
 }
 }
+
+int main() {
+    cbuf_addtext("launchgame");
+    return 0;
+}
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
