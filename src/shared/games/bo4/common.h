@@ -16,4 +16,6 @@ typedef unsigned __int64 __uint64_t;
 
 typedef __uint64_t bdUInt64;
 
+extern uintptr_t dwProcessBase;
+
 const static auto Cbuf_AddText = reinterpret_cast<std::uintptr_t(__fastcall*)(int, const char*)>(dwProcessBase + 0x3CDE880);

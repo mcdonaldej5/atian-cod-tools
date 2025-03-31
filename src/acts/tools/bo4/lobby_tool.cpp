@@ -7,6 +7,10 @@
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
+inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)value, count); }
+
+uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
+
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
