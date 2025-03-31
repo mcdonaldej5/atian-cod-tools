@@ -3,6 +3,7 @@
 #include <core/config.hpp>
 #include <tools/pool.hpp>
 #include <games/bo4/pool.hpp>
+#include <games/bo4/common.h>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
@@ -31,50 +32,13 @@ template<class T> T __ROL__(T value, int count)
 
 inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)value, count); }
 
-uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
-
-
-bool attachToGame() {
-    Process bo4(L"BlackOps4.exe"); // Ensure Process class is implemented correctly
-
-    if (!bo4.Open()) {
-        std::cerr << "Error: Can't open game process!" << std::endl;
-        return false;
-    }
-    return true;
+std::uintptr_t dwProcessBase = GetModuleBaseAddress(L"BlackOps4.exe");
+if (!dwProcessBase) {
+    std::cerr << "Error: Failed to get process base address!" << std::endl;
 }
 
 
-void cbuf_addtext(const char* text& logs) {
 
-
-    typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
-	uintptr_t baseAddress = GetModuleBaseAddress(L"BlackOps4.exe"); 
-    t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
-		
-
-	if (!Cbuf_AddText) {
-        logs = "Error: Cbuf_AddText function not found!";
-        return;
-    }
-
-	if (!attachToGame()) {
-        return;
-
-    // Ensure game process is running before executing the command
-    
-
-    // Call the function to execute the command in the game
-
-	logs = "Executing command:";
-	Cbuf_AddText(0, "launchgame");
-}
-}
-
-int main() {
-    cbuf_addtext("launchgame");
-    return 0;
-}
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
@@ -546,12 +510,12 @@ namespace {
 		ImGui::Begin("Game Controls");
 		if (ImGui::Button("Launch Game"))
 		{
-			cbuf_addtext("launchgame");
+			Cbuf_AddText(0, "launchgame");
 			
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
-			cbuf_addtext("fastrestart");
+			Cbuf_AddText(0, "fastrestart");
 			
 		}
 		ImGui::End();
@@ -577,7 +541,7 @@ namespace {
 				gtsCfg << "gts " << (wzgts[i] + 1) << " " << (gts[i] ? '1' : '0') << "\n";
 			}
 			
-			cbuf_addtext("launchgame");
+			Cbuf_AddText(0, "launchgame");
 
 			CfgCbuf(gtsCfg.str(), log);
 
