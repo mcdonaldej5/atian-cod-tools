@@ -3,6 +3,7 @@
 #include <core/config.hpp>
 #include <tools/pool.hpp>
 #include <games/bo4/pool.hpp>
+#include <games/bo4/common.h>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
@@ -34,39 +35,6 @@ inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)valu
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 
 
-bool attachToGame() {
-    Process bo4(L"BlackOps4.exe"); // Ensure Process class is implemented correctly
-
-    if (!bo4.Open()) {
-        std::cerr << "Error: Can't open game process!" << std::endl;
-        return false;
-    }
-    return true;
-}
-
-
-void cbuf_addtext(const char* text) {
-
-
-    typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
-    t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
-		
-
-	if (!Cbuf_AddText) {
-        std::cerr << "Error: Cbuf_AddText function not found!" << std::endl;
-        return;
-    }
-
-	if (!attachToGame()) {
-        return;
-
-    // Ensure game process is running before executing the command
-    
-
-    // Call the function to execute the command in the game
-	Cbuf_AddText(0, "launchgame");
-}
-}
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
@@ -536,12 +504,12 @@ namespace {
 		}
 		if (ImGui::Button("Launch Game"))
 		{
-			cbuf_addtext("launchgame");
+			Cbuf_AddText(0, "launchgame");
 			
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
-			cbuf_addtext("fastrestart");
+			Cbuf_AddText(0, "fastrestart");
 			
 		}
 
@@ -565,10 +533,12 @@ namespace {
 			for (size_t i = 0; i < ARRAYSIZE(wzgts); i++) {
 				gtsCfg << "gts " << (wzgts[i] + 1) << " " << (gts[i] ? '1' : '0') << "\n";
 			}
+			
+			Cbuf_AddText(0, "launchgame");
 
 			CfgCbuf(gtsCfg.str(), log);
 
-			cbuf_addtext("launchgame");
+			
 
 		}
 		if (ImGui::BeginListBox("Options")) {
