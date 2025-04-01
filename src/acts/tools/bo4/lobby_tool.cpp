@@ -39,23 +39,7 @@ void cbuf_addtext(const char* text, std::string& logs) {
     typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
     t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
 		
-	struct CBuff {
-		uintptr_t buffer; // const char* 
-		int32_t allocated;
-		int32_t used;
-	};
-
-	auto buff{ bo4.ReadMemoryObjectEx<CBuff>(bo4[0x3CDE880]) };
-
-	const char* cmd{ utils::va("exec %s\n", hookCfgName) };
-	size_t len{ std::strlen(cmd) };
-	bo4.WriteMemory(buff->buffer + buff->used, cmd, len + 1);
-	buff->used += (int32_t)len;
-	if (!bo4.WriteMemory(bo4[0x3CDE880], buff.get(), sizeof(*buff))) {
-		throw std::runtime_error("Can't write cbuf");
-	}
-	logs = "Injected";
-}
+	
 
 	if (!Cbuf_AddText) {
         logs = "Error: Cbuf_AddText function not found!";
@@ -73,7 +57,7 @@ void cbuf_addtext(const char* text, std::string& logs) {
 	logs = "Executing command:";
 	Cbuf_AddText(0, "launchgame", log);
 }
-
+}
 
 int main() {
     cbuf_addtext("launchgame", log);
