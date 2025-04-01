@@ -504,18 +504,18 @@ namespace {
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
 
-		ImGui::Begin("Game Controls");
+		
 		if (ImGui::Button("Launch Game"))
 		{
-			Cbuf_AddText(0, "launchgame");
+			CallLobbyFunction(0x3CDE880, 0, "launchgame", log);
 			
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
-			Cbuf_AddText(0, "fastrestart");
+			CallLobbyFunction(0x3CDE880, 0, "fastrestart", log);
 			
 		}
-		ImGui::End();
+		
 		
 		ImGui::SeparatorText("Blackout config");
 
