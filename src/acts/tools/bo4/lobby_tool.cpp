@@ -73,7 +73,7 @@ void cbuf_addtext(const char* text, std::string& logs) {
 	logs = "Executing command:";
 	Cbuf_AddText(0, "launchgame", log);
 }
-}
+
 
 int main() {
     cbuf_addtext("launchgame", log);
