@@ -3,7 +3,6 @@
 #include <core/config.hpp>
 #include <tools/pool.hpp>
 #include <games/bo4/pool.hpp>
-#include <games/bo4/common.h>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
 
@@ -34,7 +33,35 @@ inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)valu
 
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
 
+void cbuf_addtext(const char* text, std::string& logs) {
 
+
+    typedef void(*t_Cbuf_AddText)(int localClientNum, const char* text);
+    t_Cbuf_AddText Cbuf_AddText = reinterpret_cast<t_Cbuf_AddText>(0x3CDE880);
+		
+
+	if (!Cbuf_AddText) {
+        logs = "Error: Cbuf_AddText function not found!";
+        return;
+    }
+
+	if (!attachToGame()) {
+        return;
+
+    // Ensure game process is running before executing the command
+    
+
+    // Call the function to execute the command in the game
+
+	logs = "Executing command:";
+	Cbuf_AddText(0, "launchgame", log);
+}
+}
+
+int main() {
+    cbuf_addtext("launchgame", log);
+    return 0;
+}
 
 namespace {
 	static const char* gametypes[]{
@@ -429,13 +456,13 @@ namespace {
 				int32_t used;
 			};
 
-			auto buff{ bo4.ReadMemoryObjectEx<CBuff>(bo4[0xF99B168]) };
+			auto buff{ bo4.ReadMemoryObjectEx<CBuff>(bo4[0x3CDE880]) };
 
 			const char* cmd{ utils::va("exec %s\n", hookCfgName) };
 			size_t len{ std::strlen(cmd) };
 			bo4.WriteMemory(buff->buffer + buff->used, cmd, len + 1);
 			buff->used += (int32_t)len;
-			if (!bo4.WriteMemory(bo4[0xF99B168], buff.get(), sizeof(*buff))) {
+			if (!bo4.WriteMemory(bo4[0x3CDE880], buff.get(), sizeof(*buff))) {
 				throw std::runtime_error("Can't write cbuf");
 			}
 			logs = "Injected";
@@ -507,15 +534,24 @@ namespace {
 		
 		if (ImGui::Button("Launch Game"))
 		{
-			CallLobbyFunction(0x3CDE880, 0, launchgame, log);
+			cbuf_addtext("launchgame", log);
 			
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
+			cbuf_addtext("fastrestart", log);
+			
+		}
+		if (ImGui::Button("Launch Game 2"))
+		{
+			CallLobbyFunction(0x3CDE880, 0, launchgame, log);
+			
+		}
+		if (ImGui::Button("Fast Restart 2"))
+		{
 			CallLobbyFunction(0x3CDE880, 0, fastrestart, log);
 			
 		}
-		
 		
 		ImGui::SeparatorText("Blackout config");
 
