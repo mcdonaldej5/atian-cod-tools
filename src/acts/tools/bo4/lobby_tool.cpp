@@ -507,12 +507,12 @@ namespace {
 		
 		if (ImGui::Button("Launch Game"))
 		{
-			CallLobbyFunction(0x3CDE880, 0, "launchgame", log);
+			CallLobbyFunction(0x3CDE880, 0, launchgame, log);
 			
 		}
 		if (ImGui::Button("Fast Restart"))
 		{
-			CallLobbyFunction(0x3CDE880, 0, "fastrestart", log);
+			CallLobbyFunction(0x3CDE880, 0, fastrestart, log);
 			
 		}
 		
