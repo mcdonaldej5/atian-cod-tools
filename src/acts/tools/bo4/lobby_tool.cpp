@@ -2,6 +2,7 @@
 #include "tools/tools_nui.hpp"
 #include <core/config.hpp>
 #include <tools/pool.hpp>
+#include <cbuf.cpp>
 #include <games/bo4/pool.hpp>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
@@ -32,7 +33,6 @@ template<class T> T __ROL__(T value, int count)
 inline __int64 __ROL8__(__int64 value, int count) { return __ROL__((__int64)value, count); }
 
 uintptr_t dwProcessBase = reinterpret_cast<uintptr_t>(GetModuleHandleA(NULL));
-
 
 namespace {
 	static const char* gametypes[]{
@@ -506,12 +506,12 @@ namespace {
 	
 		if (ImGui::Button("Launch Game 2"))
 		{
-			CallLobbyFunction(0x3CDE880, 0, "launchgame", log);
+			ExecuteGameCommand("launchgame");
 			
 		}
 		if (ImGui::Button("Fast Restart 2"))
 		{
-			CallLobbyFunction(0x3CDE880, 0, "fastrestart", log);
+			ExecuteGameCommand("fastrestart");
 			
 		}
 		
