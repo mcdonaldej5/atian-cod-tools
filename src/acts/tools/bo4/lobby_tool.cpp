@@ -5,157 +5,7 @@
 #include <games/bo4/pool.hpp>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
-#include <windows.h>
-#include <tlhelp32.h>
-#include <iostream>
 
-#define GAME_EXE "BlackOps4.exe"
-#define CBUF_ADDTEXT_OFFSET 0x3CDE880  // Offset for Cbuf_AddText
-
-// Function to get the process ID of BlackOps4.exe
-DWORD GetProcessID(const char* processName) {
-    DWORD processID = 0;
-    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnap != INVALID_HANDLE_VALUE) {
-        PROCESSENTRY32 pe;
-        pe.dwSize = sizeof(PROCESSENTRY32);
-        if (Process32First(hSnap, &pe)) {
-            do {
-                if (_stricmp(pe.szExeFile, processName) == 0) {
-                    processID = pe.th32ProcessID;
-                    break;
-                }
-            } while (Process32Next(hSnap, &pe));
-        }
-        CloseHandle(hSnap);
-    }
-    return processID;
-}
-
-// Function to get the base address of BlackOps4.exe
-uintptr_t GetModuleBaseAddress(DWORD processID, const char* moduleName) {
-    uintptr_t baseAddress = 0;
-    HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processID);
-    if (hSnap != INVALID_HANDLE_VALUE) {
-        MODULEENTRY32 me;
-        me.dwSize = sizeof(MODULEENTRY32);
-        if (Module32First(hSnap, &me)) {
-            do {
-                if (_stricmp(me.szModule, moduleName) == 0) {
-                    baseAddress = (uintptr_t)me.modBaseAddr;
-                    break;
-                }
-            } while (Module32Next(hSnap, &me));
-        }
-        CloseHandle(hSnap);
-    }
-    return baseAddress;
-}
-
-// Function to execute a command in Black Ops 4 using a shellcode stub
-void ExecuteGameCommand(const char* command) {
-    DWORD processID = GetProcessID(GAME_EXE);
-    if (!processID) {
-        std::cerr << "[ERROR] BlackOps4.exe not found!\n";
-        return;
-    }
-
-    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processID);
-    if (!hProcess) {
-        std::cerr << "[ERROR] Failed to open process!\n";
-        return;
-    }
-
-    uintptr_t baseAddress = GetModuleBaseAddress(processID, GAME_EXE);
-    uintptr_t cbufAddTextAddr = baseAddress + CBUF_ADDTEXT_OFFSET;
-
-    // Allocate memory in the game process for the command string
-    void* remoteCommand = VirtualAllocEx(hProcess, NULL, strlen(command) + 1, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (!remoteCommand) {
-        std::cerr << "[ERROR] Memory allocation failed!\n";
-        CloseHandle(hProcess);
-        return;
-    }
-
-    // Write the command string into the allocated memory
-    if (!WriteProcessMemory(hProcess, remoteCommand, command, strlen(command) + 1, NULL)) {
-        std::cerr << "[ERROR] Failed to write memory!\n";
-        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
-        CloseHandle(hProcess);
-        return;
-    }
-
-    // Shellcode to call the function with the correct calling convention
-    BYTE shellcode[] = {
-		0x50,                                    // push eax (save eax)
-		0x51,                                    // push ecx (save ecx)
-		0x52,                                    // push edx (save edx)
-		0x68, 0x00, 0x00, 0x00, 0x00,            // push remoteCommand (to be replaced)
-		0xB9, 0x00, 0x00, 0x00, 0x00,            // mov ecx, cbufAddTextAddr (to be replaced)
-		0xFF, 0xD1,                              // call ecx
-		0x5A,                                    // pop edx (restore edx)
-		0x59,                                    // pop ecx (restore ecx)
-		0x58,                                    // pop eax (restore eax)
-		0xC2, 0x04, 0x00                         // ret 4 (proper return)
-	};
-    // Replace placeholders with actual addresses
-    *reinterpret_cast<uintptr_t*>(&shellcode[4]) = (uintptr_t)remoteCommand;
-    *reinterpret_cast<uintptr_t*>(&shellcode[9]) = cbufAddTextAddr;
-
-    // Allocate memory for the shellcode
-    void* remoteShellcode = VirtualAllocEx(hProcess, NULL, sizeof(shellcode), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    if (!remoteShellcode) {
-        std::cerr << "[ERROR] Failed to allocate shellcode memory!\n";
-        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
-        CloseHandle(hProcess);
-        return;
-    }
-
-    // Write shellcode to the allocated memory
-    if (!WriteProcessMemory(hProcess, remoteShellcode, shellcode, sizeof(shellcode), NULL)) {
-        std::cerr << "[ERROR] Failed to write shellcode!\n";
-        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
-        VirtualFreeEx(hProcess, remoteShellcode, 0, MEM_RELEASE);
-        CloseHandle(hProcess);
-        return;
-    }
-
-    // Create a remote thread to execute the shellcode
-    HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-if (hThreadSnap == INVALID_HANDLE_VALUE) {
-    std::cerr << "[ERROR] Could not get thread snapshot!\n";
-    return;
-}
-
-THREADENTRY32 te;
-te.dwSize = sizeof(THREADENTRY32);
-
-DWORD gameThreadID = 0;
-if (Thread32First(hThreadSnap, &te)) {
-    do {
-        if (te.th32OwnerProcessID == processID) {
-            gameThreadID = te.th32ThreadID;  // Pick the first thread found
-            break;
-        }
-    } while (Thread32Next(hThreadSnap, &te));
-}
-CloseHandle(hThreadSnap);
-
-if (gameThreadID == 0) {
-    std::cerr << "[ERROR] Could not find a valid game thread!\n";
-    return;
-}
-
-HANDLE hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, gameThreadID);
-if (!hThread) {
-    std::cerr << "[ERROR] Failed to open game thread!\n";
-    return;
-}
-
-QueueUserAPC((PAPCFUNC)remoteShellcode, hThread, NULL);
-CloseHandle(hThread);
-   
-}
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
@@ -434,7 +284,6 @@ namespace {
 		//"1deathcircle\0Enable death circle",
 	};
 
-	
 	void CallLobbyFunction(uintptr_t loc, int lobby, const char* val, std::string& logs) {
 		Process bo4 = L"BlackOps4.exe";
 
@@ -492,7 +341,7 @@ namespace {
 				uintptr_t pool;
 				uint32_t itemSize;
 				int32_t itemCount;
-				::byte isSingleton;
+				byte isSingleton;
 				int32_t itemAllocCount;
 				uintptr_t freeHead;
 			};
@@ -508,7 +357,7 @@ namespace {
 
 			RawFileEntry entry{};
 			constexpr const char* hookCfgName = "gamedata/configs/common/default_systemlink.cfg";
-			entry.name = ::hash::Hash64(hookCfgName);
+			entry.name = hash::Hash64(hookCfgName);
 			entry.buffer = alloc;
 			entry.size = sizeOut;
 
@@ -549,13 +398,13 @@ namespace {
 				int32_t used;
 			};
 
-			auto buff{ bo4.ReadMemoryObjectEx<CBuff>(bo4[0x3CDE880]) };
+			auto buff{ bo4.ReadMemoryObjectEx<CBuff>(bo4[0xF99B168]) };
 
 			const char* cmd{ utils::va("exec %s\n", hookCfgName) };
 			size_t len{ std::strlen(cmd) };
 			bo4.WriteMemory(buff->buffer + buff->used, cmd, len + 1);
 			buff->used += (int32_t)len;
-			if (!bo4.WriteMemory(bo4[0x3CDE880], buff.get(), sizeof(*buff))) {
+			if (!bo4.WriteMemory(bo4[0xF99B168], buff.get(), sizeof(*buff))) {
 				throw std::runtime_error("Can't write cbuf");
 			}
 			logs = "Injected";
@@ -624,19 +473,6 @@ namespace {
 			CallLobbyFunction(0x398E420, 0, map, log);
 		}
 
-		
-	
-		if (ImGui::Button("Launch Game 2"))
-		{
-			ExecuteGameCommand("launchgame");
-			
-		}
-		if (ImGui::Button("Fast Restart 2"))
-		{
-			ExecuteGameCommand("fastrestart");
-			
-		}
-		
 		ImGui::SeparatorText("Blackout config");
 
 		if (ImGui::BeginListBox("Items")) {
@@ -657,12 +493,8 @@ namespace {
 			for (size_t i = 0; i < ARRAYSIZE(wzgts); i++) {
 				gtsCfg << "gts " << (wzgts[i] + 1) << " " << (gts[i] ? '1' : '0') << "\n";
 			}
-			
 
 			CfgCbuf(gtsCfg.str(), log);
-
-			
-
 		}
 		if (ImGui::BeginListBox("Options")) {
 			for (size_t i = 0; i < ARRAYSIZE(wzgts2); i++) {
