@@ -87,18 +87,17 @@ void ExecuteGameCommand(const char* command) {
 
     // Shellcode to call the function with the correct calling convention
     BYTE shellcode[] = {
-        0x50,                                    // push eax (save eax)
-        0x51,                                    // push ecx (save ecx)
-        0x52,                                    // push edx (save edx)
-        0x68, 0x00, 0x00, 0x00, 0x00,            // push remoteCommand (to be replaced)
-        0xB9, 0x00, 0x00, 0x00, 0x00,            // mov ecx, cbufAddTextAddr (to be replaced)
-        0xFF, 0xD1,                              // call ecx
-        0x5A,                                    // pop edx (restore edx)
-        0x59,                                    // pop ecx (restore ecx)
-        0x58,                                    // pop eax (restore eax)
-        0xC3                                     // ret
-    };
-
+		0x50,                                    // push eax (save eax)
+		0x51,                                    // push ecx (save ecx)
+		0x52,                                    // push edx (save edx)
+		0x68, 0x00, 0x00, 0x00, 0x00,            // push remoteCommand (to be replaced)
+		0xB9, 0x00, 0x00, 0x00, 0x00,            // mov ecx, cbufAddTextAddr (to be replaced)
+		0xFF, 0xD1,                              // call ecx
+		0x5A,                                    // pop edx (restore edx)
+		0x59,                                    // pop ecx (restore ecx)
+		0x58,                                    // pop eax (restore eax)
+		0xC2, 0x04, 0x00                         // ret 4 (proper return)
+	};
     // Replace placeholders with actual addresses
     *reinterpret_cast<uintptr_t*>(&shellcode[4]) = (uintptr_t)remoteCommand;
     *reinterpret_cast<uintptr_t*>(&shellcode[9]) = cbufAddTextAddr;
@@ -122,14 +121,39 @@ void ExecuteGameCommand(const char* command) {
     }
 
     // Create a remote thread to execute the shellcode
-    HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)remoteShellcode, NULL, 0, NULL);
-    if (!hThread) {
-        std::cerr << "[ERROR] Failed to create remote thread!\n";
-        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
-        VirtualFreeEx(hProcess, remoteShellcode, 0, MEM_RELEASE);
-        CloseHandle(hProcess);
-        return;
-    }
+    HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+if (hThreadSnap == INVALID_HANDLE_VALUE) {
+    std::cerr << "[ERROR] Could not get thread snapshot!\n";
+    return;
+}
+
+THREADENTRY32 te;
+te.dwSize = sizeof(THREADENTRY32);
+
+DWORD gameThreadID = 0;
+if (Thread32First(hThreadSnap, &te)) {
+    do {
+        if (te.th32OwnerProcessID == processID) {
+            gameThreadID = te.th32ThreadID;  // Pick the first thread found
+            break;
+        }
+    } while (Thread32Next(hThreadSnap, &te));
+}
+CloseHandle(hThreadSnap);
+
+if (gameThreadID == 0) {
+    std::cerr << "[ERROR] Could not find a valid game thread!\n";
+    return;
+}
+
+HANDLE hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, gameThreadID);
+if (!hThread) {
+    std::cerr << "[ERROR] Failed to open game thread!\n";
+    return;
+}
+
+QueueUserAPC((PAPCFUNC)remoteShellcode, hThread, NULL);
+CloseHandle(hThread);
 
     // Wait for the thread to complete and clean up
     WaitForSingleObject(hThread, INFINITE);
