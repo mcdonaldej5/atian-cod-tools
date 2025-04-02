@@ -32,7 +32,7 @@ DWORD GetProcessID(const char* processName) {
     return processID;
 }
 
-// Function to get the base address of BlackOps4.exe
+
 uintptr_t GetModuleBaseAddress(DWORD processID, const char* moduleName) {
     uintptr_t baseAddress = 0;
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processID);
