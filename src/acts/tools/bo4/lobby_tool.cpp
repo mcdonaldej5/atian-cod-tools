@@ -121,48 +121,21 @@ void ExecuteGameCommand(const char* command) {
     }
 
     // Create a remote thread to execute the shellcode
-    HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-if (hThreadSnap == INVALID_HANDLE_VALUE) {
-    std::cerr << "[ERROR] Could not get thread snapshot!\n";
-    return;
-}
-
-THREADENTRY32 te;
-te.dwSize = sizeof(THREADENTRY32);
-
-DWORD gameThreadID = 0;
-if (Thread32First(hThreadSnap, &te)) {
-    do {
-        if (te.th32OwnerProcessID == processID) {
-            gameThreadID = te.th32ThreadID;  // Pick the first thread found
-            break;
-        }
-    } while (Thread32Next(hThreadSnap, &te));
-}
-CloseHandle(hThreadSnap);
-
-if (gameThreadID == 0) {
-    std::cerr << "[ERROR] Could not find a valid game thread!\n";
-    return;
-}
-
-HANDLE hThread = OpenThread(THREAD_SET_CONTEXT, FALSE, gameThreadID);
+    HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)remoteShellcode, NULL, 0, NULL);
 if (!hThread) {
-    std::cerr << "[ERROR] Failed to open game thread!\n";
-    return;
-}
-
-QueueUserAPC((PAPCFUNC)remoteShellcode, hThread, NULL);
-CloseHandle(hThread);
-
-    // Wait for the thread to complete and clean up
-    WaitForSingleObject(hThread, INFINITE);
+    std::cerr << "[ERROR] Failed to create remote thread!\n";
     VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
     VirtualFreeEx(hProcess, remoteShellcode, 0, MEM_RELEASE);
-    CloseHandle(hThread);
     CloseHandle(hProcess);
+    return;
+}
 
-    std::cout << "[SUCCESS] Command executed: " << command << "\n";
+// Detach thread instead of waiting
+CloseHandle(hThread);
+CloseHandle(hProcess);
+std::cout << "[SUCCESS] Command executed asynchronously!\n";
+    // Wait for the thread to complete and clean up
+   
 }
 namespace {
 	static const char* gametypes[]{
