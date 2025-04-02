@@ -32,7 +32,7 @@ DWORD GetProcessID(const char* processName) {
     return processID;
 }
 
-
+// Function to get the base address of BlackOps4.exe
 uintptr_t GetModuleBaseAddress(DWORD processID, const char* moduleName) {
     uintptr_t baseAddress = 0;
     HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, processID);
@@ -52,7 +52,7 @@ uintptr_t GetModuleBaseAddress(DWORD processID, const char* moduleName) {
     return baseAddress;
 }
 
-// Function to execute a command in Black Ops 4 (For use in ImGui Button)
+// Function to execute a command in Black Ops 4 using a shellcode stub
 void ExecuteGameCommand(const char* command) {
     DWORD processID = GetProcessID(GAME_EXE);
     if (!processID) {
@@ -69,40 +69,77 @@ void ExecuteGameCommand(const char* command) {
     uintptr_t baseAddress = GetModuleBaseAddress(processID, GAME_EXE);
     uintptr_t cbufAddTextAddr = baseAddress + CBUF_ADDTEXT_OFFSET;
 
-    // Allocate memory in the game process
-    void* remoteMemory = VirtualAllocEx(hProcess, NULL, strlen(command) + 1, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-    if (!remoteMemory) {
+    // Allocate memory in the game process for the command string
+    void* remoteCommand = VirtualAllocEx(hProcess, NULL, strlen(command) + 1, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (!remoteCommand) {
         std::cerr << "[ERROR] Memory allocation failed!\n";
         CloseHandle(hProcess);
         return;
     }
 
     // Write the command string into the allocated memory
-    if (!WriteProcessMemory(hProcess, remoteMemory, command, strlen(command) + 1, NULL)) {
+    if (!WriteProcessMemory(hProcess, remoteCommand, command, strlen(command) + 1, NULL)) {
         std::cerr << "[ERROR] Failed to write memory!\n";
-        VirtualFreeEx(hProcess, remoteMemory, 0, MEM_RELEASE);
+        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
         CloseHandle(hProcess);
         return;
     }
 
-    // Create a remote thread to call Cbuf_AddText with our command
-    HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)cbufAddTextAddr, remoteMemory, 0, NULL);
+    // Shellcode to call the function with the correct calling convention
+    BYTE shellcode[] = {
+        0x50,                                    // push eax (save eax)
+        0x51,                                    // push ecx (save ecx)
+        0x52,                                    // push edx (save edx)
+        0x68, 0x00, 0x00, 0x00, 0x00,            // push remoteCommand (to be replaced)
+        0xB9, 0x00, 0x00, 0x00, 0x00,            // mov ecx, cbufAddTextAddr (to be replaced)
+        0xFF, 0xD1,                              // call ecx
+        0x5A,                                    // pop edx (restore edx)
+        0x59,                                    // pop ecx (restore ecx)
+        0x58,                                    // pop eax (restore eax)
+        0xC3                                     // ret
+    };
+
+    // Replace placeholders with actual addresses
+    *reinterpret_cast<uintptr_t*>(&shellcode[4]) = (uintptr_t)remoteCommand;
+    *reinterpret_cast<uintptr_t*>(&shellcode[9]) = cbufAddTextAddr;
+
+    // Allocate memory for the shellcode
+    void* remoteShellcode = VirtualAllocEx(hProcess, NULL, sizeof(shellcode), MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (!remoteShellcode) {
+        std::cerr << "[ERROR] Failed to allocate shellcode memory!\n";
+        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
+        CloseHandle(hProcess);
+        return;
+    }
+
+    // Write shellcode to the allocated memory
+    if (!WriteProcessMemory(hProcess, remoteShellcode, shellcode, sizeof(shellcode), NULL)) {
+        std::cerr << "[ERROR] Failed to write shellcode!\n";
+        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
+        VirtualFreeEx(hProcess, remoteShellcode, 0, MEM_RELEASE);
+        CloseHandle(hProcess);
+        return;
+    }
+
+    // Create a remote thread to execute the shellcode
+    HANDLE hThread = CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)remoteShellcode, NULL, 0, NULL);
     if (!hThread) {
         std::cerr << "[ERROR] Failed to create remote thread!\n";
-        VirtualFreeEx(hProcess, remoteMemory, 0, MEM_RELEASE);
+        VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
+        VirtualFreeEx(hProcess, remoteShellcode, 0, MEM_RELEASE);
         CloseHandle(hProcess);
         return;
     }
 
     // Wait for the thread to complete and clean up
     WaitForSingleObject(hThread, INFINITE);
-    VirtualFreeEx(hProcess, remoteMemory, 0, MEM_RELEASE);
+    VirtualFreeEx(hProcess, remoteCommand, 0, MEM_RELEASE);
+    VirtualFreeEx(hProcess, remoteShellcode, 0, MEM_RELEASE);
     CloseHandle(hThread);
     CloseHandle(hProcess);
 
     std::cout << "[SUCCESS] Command executed: " << command << "\n";
 }
-
 namespace {
 	static const char* gametypes[]{
 		"warzone_solo\0Blackout/Solo",
