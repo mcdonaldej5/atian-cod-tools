@@ -11,7 +11,7 @@ namespace {
 	constexpr uint64_t start = 1545156000;
 	constexpr uint64_t end = 2147367600;
 
-	void bo4_event_tool() {
+	void bo4_store_tool() {
 		tool::nui::NuiUseDefaultWindow dw{};
 		ImGui::SeparatorText("Store tool");
 
