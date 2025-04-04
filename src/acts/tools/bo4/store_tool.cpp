@@ -76,10 +76,6 @@ namespace {
 			ImGui::EndCombo();
 		}
 
-	
-		if (c) tool::nui::SaveNextConfig();
-		ImGui::Separator();
-
 		if (ImGui::Button("Inject")) {
 			std::vector<const char*> store{};
 
