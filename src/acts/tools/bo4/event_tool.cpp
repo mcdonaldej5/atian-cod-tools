@@ -131,11 +131,7 @@ namespace {
 			std::vector<const char*> events{};
 
 			// I guess it's mandatory to have them
-			events.push_back("reserves_drop_12");
-			events.push_back("sunset_features");
-			events.push_back("reserve_completion_meter");
-			events.push_back("bribe_offer_holidays_2019");
-			events.push_back("half_off_pick_weapon_bribes");
+		
 			events.push_back("zm_daily_calling_2");
 			events.push_back("set zm_active_daily_calling 2");
 			events.push_back("zm_active_event_calling");
