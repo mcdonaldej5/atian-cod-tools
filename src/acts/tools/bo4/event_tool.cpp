@@ -128,17 +128,21 @@ namespace {
 		ImGui::Separator();
 
 		if (ImGui::Button("Inject")) {
-			std::vector<const char*> events{};
+            std::vector<const char*> events{};
 
-			// I guess it's mandatory to have them
-		
-			events.push_back("zm_daily_calling_2");
-			events.push_back("set zm_active_daily_calling 2");
-			events.push_back("zm_active_event_calling");
-			events.push_back("set zm_active_event_calling 2");
-			events.push_back("zm_lab_titanium_treble_slot_1");
-			events.push_back("zm_lab_tungsten_tripler_slot_2");
-			
+            // I guess it's mandatory to have them
+            events.push_back("zm_lab_titanium_treble_slot_1");
+            events.push_back("zm_lab_tungsten_tripler_slot_2");
+            
+            // --- ADDED FOR ZOMBIES HALLOWEEN 2018 ---
+            // 1. Triggers the overarching event logic from events.json
+            events.push_back("zm_halloween_event_2018");
+            
+            // 2. Forces the specific UI flags for the Calling menu to render
+            events.push_back("zm_active_event_calling");
+            events.push_back("set zm_active_event_calling 1");
+            events.push_back("zm_daily_calling_1");
+            events.push_back("set zm_active_daily_calling 1");
 
 			if (set2xp) {
 				events.push_back("global_2xp_mp_server");
