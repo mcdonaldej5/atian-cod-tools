@@ -8,7 +8,7 @@
 namespace {
 	// string,int,int,string
 	constexpr uint64_t schedule_pc_csv = hash::Hash64("gamedata/events/schedule_pc.csv");
-	constexpr uint64_t start = 1545156000;
+	constexpr uint64_t start = 1540770058;
 	constexpr uint64_t end = 2147367600;
 
 	void bo4_event_tool() {
