@@ -130,19 +130,22 @@ namespace {
 		if (ImGui::Button("Inject")) {
             std::vector<const char*> events{};
 
-            // I guess it's mandatory to have them
+            // These two zm_lab entries are mandatory baseline events.
             events.push_back("zm_lab_titanium_treble_slot_1");
             events.push_back("zm_lab_tungsten_tripler_slot_2");
-            
-            // --- ADDED FOR ZOMBIES HALLOWEEN 2018 ---
-            // 1. Triggers the overarching event logic from events.json
-            events.push_back("zm_halloween_event_2018");
-            
-            // 2. Forces the specific UI flags for the Calling menu to render
-            events.push_back("zm_active_event_calling");
-            events.push_back("set zm_active_event_calling 1");
-            events.push_back("zm_daily_calling_1");
-            events.push_back("set zm_active_daily_calling 1");
+
+            // --- ZOMBIES HALLOWEEN 2018 EVENT ---
+            // Push the correct _ON-suffixed event name. The game matches this
+            // exactly against events.json, which fires the rule:
+            //   "set zm_active_event_calling 1"
+            // That DVAR is what zm_stats.gsc reads to load the Halloween
+            // calling tasks at runtime. Do NOT push the DVAR set commands
+            // directly into this vector — they are not event names and will
+            // be silently ignored or cause a lookup failure.
+            // Do NOT also push zm_daily_calling_1 here: the daily calling
+            // system sets zm_active_event_calling back to 0 when active,
+            // which would immediately cancel the Halloween event.
+            events.push_back("zm_halloween_event_2018_ON");
 
 			if (set2xp) {
 				events.push_back("global_2xp_mp_server");
