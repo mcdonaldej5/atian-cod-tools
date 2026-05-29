@@ -292,21 +292,18 @@ namespace {
                         throw std::runtime_error("Can't read StringTable pool descriptor");
                     }
 
-                    if (poolDesc->itemSize != sizeof(T7StringTable)) {
-                        throw std::runtime_error(std::format(
-                            "StringTable pool itemSize mismatch: got {}, expected {}",
-                            poolDesc->itemSize, sizeof(T7StringTable)));
+                    if (!poolDesc->pool || poolDesc->itemCount <= 0) {
+                        throw std::runtime_error(
+                            "StringTable pool is empty or not yet loaded.\n"
+                            "Make sure you are at the main menu before injecting.");
                     }
 
-                    // Read all pool entries.
-                    auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemAllocCount);
-                    if (!entries) {
-                        throw std::runtime_error("Can't read StringTable pool entries");
-                    }
+                    // Read all pool entries using itemCount (matches the BO3 dumper behaviour).
+                    auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemCount);
 
                     // Search for the schedule.csv entry by name string comparison.
                     bool patched = false;
-                    for (int32_t i = 0; i < poolDesc->itemAllocCount; i++) {
+                    for (int32_t i = 0; i < poolDesc->itemCount; i++) {
                         const T7StringTable& e = entries[i];
                         if (!e.name) continue;
 
@@ -377,10 +374,13 @@ namespace {
                 auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
                 if (!poolDesc) throw std::runtime_error("Can't read pool descriptor");
 
-                auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemAllocCount);
-                if (!entries) throw std::runtime_error("Can't read pool entries");
+                if (!poolDesc->pool || poolDesc->itemCount <= 0) {
+                    throw std::runtime_error("StringTable pool not loaded; nothing to restore.");
+                }
 
-                for (int32_t i = 0; i < poolDesc->itemAllocCount; i++) {
+                auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemCount);
+
+                for (int32_t i = 0; i < poolDesc->itemCount; i++) {
                     if (!entries[i].name) continue;
                     auto n = proc.ReadStringTmp(entries[i].name, nullptr);
                     if (!n || std::string_view(n) != SCHEDULE_ASSET_NAME) continue;
