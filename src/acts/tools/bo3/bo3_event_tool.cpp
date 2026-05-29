@@ -285,7 +285,7 @@ namespace {
 
                     // Read the pool descriptor for T7_ASSET_TYPE_STRINGTABLE (index 48).
                     constexpr size_t STRINGTABLE_INDEX = bo3::pool::T7XAssetType::T7_ASSET_TYPE_STRINGTABLE;
-                    uintptr_t poolDescAddr = bo3::pool::xassetpools + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
+                    uintptr_t poolDescAddr = proc[bo3::pool::xassetpools] + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
 
                     auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
                     if (!poolDesc) {
@@ -373,7 +373,7 @@ namespace {
                 }
 
                 constexpr size_t STRINGTABLE_INDEX = bo3::pool::T7XAssetType::T7_ASSET_TYPE_STRINGTABLE;
-                uintptr_t poolDescAddr = bo3::pool::xassetpools + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
+                uintptr_t poolDescAddr = proc[bo3::pool::xassetpools] + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
                 auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
                 if (!poolDesc) throw std::runtime_error("Can't read pool descriptor");
 
