@@ -6,57 +6,88 @@
 
 namespace {
 
-    // Path of the schedule StringTable asset as it exists in the BO3 asset pool.
-    // BO3 stores the name as a plain const char* (no XHash), so we compare by string.
+    // Path of the schedule StringTable asset as it lives in the BO3 asset pool.
     constexpr const char* SCHEDULE_ASSET_NAME = "gamedata/events/schedule.csv";
 
-    // Timestamps: start in the past, end far in the future so injected events
-    // are always considered active by the game's scheduler.
-    constexpr int64_t EVENT_START = 1000000000; // Sept 2001 - safely in the past
-    constexpr int64_t EVENT_END   = 2147367600; // Jan 2038 - max practical unix time
+    // Timestamps: start safely in the past, end far in the future so injected
+    // events are always considered active by the game's scheduler.
+    constexpr int64_t EVENT_START = 1000000000; // Sept 2001
+    constexpr int64_t EVENT_END   = 2147367600; // Jan 2038
 
     // BO3 schedule.csv has 6 columns:
     //   event_name | start_time | end_time | platform | extra1 | extra2
     constexpr int32_t COLUMN_COUNT = 6;
 
     // -----------------------------------------------------------------------
-    // BO3 in-memory StringTable structs (from dumpt7.cpp analysis)
+    // BO3 in-memory structs (from dumpt7.cpp analysis)
     // -----------------------------------------------------------------------
 
-    // Each cell is a pointer to a string + a precomputed hash of that string.
     struct T7StringTableCell {
         uintptr_t string; // const char* in the target process
         int32_t   hash;
-        int32_t   _pad;   // alignment padding to reach 0x10 bytes
+        int32_t   _pad;   // natural alignment padding
     };
     static_assert(sizeof(T7StringTableCell) == 0x10, "T7StringTableCell size mismatch");
 
-    // The StringTable asset pool entry itself.
     struct T7StringTable {
-        uintptr_t name;        // const char*  - asset name/path
+        uintptr_t name;        // const char*
         int32_t   columnCount;
         int32_t   rowCount;
         uintptr_t values;      // T7StringTableCell*
-        uintptr_t cellIndex;   // __int16* - lookup index, not needed for our patch
+        uintptr_t cellIndex;   // __int16*
     };
     static_assert(sizeof(T7StringTable) == 0x20, "T7StringTable size mismatch");
 
     // -----------------------------------------------------------------------
-    // Simple djb2 hash matching how BO3 hashes StringTable cell strings.
-    // Used to fill the 'hash' field so the game's lookup code is happy.
+    // Locate g_XAssetPools at runtime via a pattern scan.
+    //
+    // The pattern targets a call site of DB_LinkXAssetEntry that is followed
+    // immediately by a LEA loading the pool array base address:
+    //
+    //   E8 ?? ?? ?? ?? 48 8D 2D ?? ?? ?? ?? 48 89 06
+    //   CALL DB_LinkXAssetEntry
+    //   LEA  rbp, [rip + g_XAssetPools]   <- 7-byte instruction starting at +5
+    //   MOV  [rsi], rbp
+    //
+    // The 4-byte RIP-relative displacement sits at match+8.
+    // The instruction after the LEA (i.e., the RIP reference point) is at match+12.
+    // Absolute pool base = (match + 12) + *(int32_t*)(match + 8)
+    // -----------------------------------------------------------------------
+    uintptr_t FindXAssetPoolsBase(Process& proc) {
+        // Pattern: CALL ?? | LEA rbp,[rip+??] | MOV [rsi],rbp
+        constexpr const char* PATTERN =
+            "E8 ?? ?? ?? ?? 48 8D 2D ?? ?? ?? ?? 48 89 06";
+
+        uintptr_t match = proc.Scan(PATTERN);
+        if (!match) {
+            return 0;
+        }
+
+        // Read the signed 32-bit RIP-relative displacement embedded in the LEA.
+        int32_t disp{};
+        if (!proc.ReadMemory(&disp, match + 8, sizeof(disp))) {
+            return 0;
+        }
+
+        // RIP at the end of the LEA instruction = match + 5 (CALL) + 7 (LEA) = match + 12.
+        return static_cast<uintptr_t>(static_cast<int64_t>(match + 12) + disp);
+    }
+
+    // -----------------------------------------------------------------------
+    // djb2 hash - fills the hash field in each StringTableCell.
+    // The game uses this for lookup; we populate it to stay consistent.
     // -----------------------------------------------------------------------
     constexpr int32_t Djb2Hash(const char* str) {
         uint32_t hash = 0x1505;
         while (*str) {
-            hash = ((hash << 5) + hash) + (uint8_t)*str++;
+            hash = ((hash << 5) + hash) + static_cast<uint8_t>(*str++);
         }
-        return (int32_t)hash;
+        return static_cast<int32_t>(hash);
     }
 
     // -----------------------------------------------------------------------
     // Tool state
     // -----------------------------------------------------------------------
-
     static bool s_cherryCamoUI      = false;
     static bool s_cherryCamoInv     = false;
     static bool s_m14WeaponUI       = false;
@@ -69,11 +100,11 @@ namespace {
     static std::string s_notif{};
 
     // -----------------------------------------------------------------------
-    // Tool UI function - called every frame by the NUI render loop
+    // Tool UI - called every frame by the NUI render loop
     // -----------------------------------------------------------------------
     void bo3_event_tool() {
         tool::nui::NuiUseDefaultWindow dw{};
-        ImGui::SeparatorText("BO3 Event Tool");
+        ImGui::SeparatorText("BO3 Events Tool");
         ImGui::TextDisabled("Injects events into the running BlackOps3.exe process.");
         ImGui::Spacing();
 
@@ -129,13 +160,11 @@ namespace {
 
         if (ImGui::Button("Inject into BlackOps3.exe")) {
 
-            // Build the list of event name strings to inject as schedule rows.
-            // Each string maps to column 0 of a schedule row.
             std::vector<std::string> events{};
 
-            // Cherry Fizz camo - requires two separate schedule event names:
-            //   "limited_time_summer_camo_ui_ON"        -> activates the promo banner in the Black Market UI
-            //   "limited_time_summer_camo_inventory_version_ON" -> sets loot_limitedtimeitemversions to ,103
+            // Cherry Fizz: two separate schedule event names required.
+            // "limited_time_summer_camo_ui_ON" activates the Black Market promo banner.
+            // "limited_time_summer_camo_inventory_version_ON" sets item version 103.
             if (s_cherryCamoUI) {
                 events.push_back("limited_time_summer_camo_ui_ON");
             }
@@ -143,12 +172,12 @@ namespace {
                 events.push_back("limited_time_summer_camo_inventory_version_ON");
             }
 
-            // M14 weapon - single event handles both the promo UI and item version 107
+            // M14: single event handles both promo UI and item version 107.
             if (s_m14WeaponUI) {
                 events.push_back("limited_time_m14_weapon_ui_ON");
             }
 
-            // XP / currency bonus events (mapped via eventmapping.csv)
+            // XP / currency bonus events (mapped via eventmapping.csv).
             if (s_double2XP) {
                 events.push_back("double_xp_mp_and_zm");
             }
@@ -181,15 +210,12 @@ namespace {
                     // Build the raw memory block we will inject.
                     //
                     // Layout inside rfile[]:
-                    //   [cells]    - COLUMN_COUNT * events.size() T7StringTableCell structs
-                    //   [strings]  - null-terminated strings for every cell value
-                    //
-                    // After writing to the remote process we fix up the string pointers
-                    // so they point to their actual remote addresses.
+                    //   [offset 0]         - COLUMN_COUNT * events.size() T7StringTableCell structs
+                    //   [after cells]      - null-terminated strings for every cell value
                     // ------------------------------------------------------------------
                     std::vector<byte> rfile{};
 
-                    // String helpers: write a string into rfile and return its offset.
+                    // Append a string and return its offset from rfile[0].
                     auto writeStr = [&](const std::string& s) -> size_t {
                         size_t off = rfile.size();
                         rfile.insert(rfile.end(), s.begin(), s.end());
@@ -197,100 +223,93 @@ namespace {
                         return off;
                     };
 
-                    // Align rfile to 8 bytes.
+                    // Pad rfile to 8-byte alignment.
                     auto align8 = [&]() {
                         while (rfile.size() % 8) rfile.push_back(0);
                     };
 
-                    // Reserve space for the cell array first.
+                    // Reserve space for the cell array at offset 0.
                     size_t numRows  = events.size();
                     size_t numCells = numRows * COLUMN_COUNT;
-                    size_t cellsOff = rfile.size();
+                    size_t cellsOff = rfile.size(); // == 0
                     rfile.resize(cellsOff + sizeof(T7StringTableCell) * numCells, 0);
 
-                    // Pre-build the string values for the six columns of each row.
-                    //   col 0: event name
-                    //   col 1: start timestamp (as decimal string)
-                    //   col 2: end timestamp (as decimal string)
-                    //   col 3: platform tag ("all")
-                    //   col 4: empty string
-                    //   col 5: empty string
+                    // Write the shared column strings once, reuse their offsets.
+                    // Columns 1-5 are the same for every row.
                     std::string startStr = std::to_string(EVENT_START);
                     std::string endStr   = std::to_string(EVENT_END);
-                    std::string allStr   = "all";
-                    std::string emptyStr = "";
 
-                    // Write fixed strings once, reuse their offsets.
                     align8();
                     size_t startOff = writeStr(startStr);
                     size_t endOff   = writeStr(endStr);
-                    size_t allOff   = writeStr(allStr);
-                    size_t emptyOff = writeStr(emptyStr);
+                    size_t allOff   = writeStr("all");
+                    size_t emptyOff = writeStr("");
 
-                    // Write per-event name strings and populate cell array.
+                    // Write per-event name strings and populate each row of cells.
                     for (size_t i = 0; i < numRows; i++) {
                         align8();
                         size_t nameOff = writeStr(events[i]);
 
-                        T7StringTableCell* row = reinterpret_cast<T7StringTableCell*>(&rfile[cellsOff]) + i * COLUMN_COUNT;
+                        T7StringTableCell* row =
+                            reinterpret_cast<T7StringTableCell*>(&rfile[cellsOff]) + i * COLUMN_COUNT;
 
-                        // col 0: event name
-                        row[0].string = nameOff;   // will be relocated below
+                        row[0].string = nameOff;
                         row[0].hash   = Djb2Hash(events[i].c_str());
 
-                        // col 1: start time
                         row[1].string = startOff;
                         row[1].hash   = Djb2Hash(startStr.c_str());
 
-                        // col 2: end time
                         row[2].string = endOff;
                         row[2].hash   = Djb2Hash(endStr.c_str());
 
-                        // col 3: platform
                         row[3].string = allOff;
                         row[3].hash   = Djb2Hash("all");
 
-                        // col 4: empty
                         row[4].string = emptyOff;
                         row[4].hash   = 0;
 
-                        // col 5: empty
                         row[5].string = emptyOff;
                         row[5].hash   = 0;
                     }
 
                     // Allocate memory in the remote process.
                     allocatedSize = rfile.size();
-                    allocated = proc.AllocateMemory(allocatedSize);
+                    allocated     = proc.AllocateMemory(allocatedSize);
                     if (!allocated) {
-                        throw std::runtime_error(std::format("Can't allocate {} bytes in remote process", allocatedSize));
+                        throw std::runtime_error(
+                            std::format("Can't allocate {} bytes in remote process", allocatedSize));
                     }
 
-                    // Relocate all string offsets to real remote addresses.
+                    // Relocate all string offsets: offset-from-rfile -> absolute remote address.
                     for (size_t i = 0; i < numRows; i++) {
-                        T7StringTableCell* row = reinterpret_cast<T7StringTableCell*>(&rfile[cellsOff]) + i * COLUMN_COUNT;
+                        T7StringTableCell* row =
+                            reinterpret_cast<T7StringTableCell*>(&rfile[cellsOff]) + i * COLUMN_COUNT;
                         for (int c = 0; c < COLUMN_COUNT; c++) {
-                            row[c].string += allocated; // offset -> absolute remote address
+                            row[c].string += allocated;
                         }
                     }
 
-                    // Write the whole block into the remote process.
+                    // Write the entire block into the remote process.
                     if (!proc.WriteMemory(allocated, rfile.data(), allocatedSize)) {
-                        throw std::runtime_error(std::format("Can't write {} bytes to remote process", allocatedSize));
+                        throw std::runtime_error(
+                            std::format("Can't write {} bytes to remote process", allocatedSize));
                     }
 
                     // ------------------------------------------------------------------
-                    // Locate the StringTable asset pool and find the schedule entry.
+                    // Locate g_XAssetPools via pattern scan, then find the
+                    // StringTable pool descriptor (index 48).
                     // ------------------------------------------------------------------
+                    uintptr_t poolsBase = FindXAssetPoolsBase(proc);
+                    if (!poolsBase) {
+                        throw std::runtime_error(
+                            "Could not locate g_XAssetPools via pattern scan.\n"
+                            "Ensure the game is fully loaded at the main menu.");
+                    }
 
-                    // Read the pool descriptor for T7_ASSET_TYPE_STRINGTABLE (index 48).
                     constexpr size_t STRINGTABLE_INDEX = bo3::pool::T7XAssetType::T7_ASSET_TYPE_STRINGTABLE;
-                    uintptr_t poolDescAddr = proc[bo3::pool::xassetpools] + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
+                    uintptr_t poolDescAddr = poolsBase + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
 
                     auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
-                    if (!poolDesc) {
-                        throw std::runtime_error("Can't read StringTable pool descriptor");
-                    }
 
                     if (!poolDesc->pool || poolDesc->itemCount <= 0) {
                         throw std::runtime_error(
@@ -298,8 +317,9 @@ namespace {
                             "Make sure you are at the main menu before injecting.");
                     }
 
-                    // Read all pool entries using itemCount (matches the BO3 dumper behaviour).
-                    auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemCount);
+                    // Read all pool entries. Use itemCount to match the dumper behaviour.
+                    auto entries = proc.ReadMemoryArrayEx<T7StringTable>(
+                        poolDesc->pool, poolDesc->itemCount);
 
                     // Search for the schedule.csv entry by name string comparison.
                     bool patched = false;
@@ -310,15 +330,14 @@ namespace {
                         auto entryName = proc.ReadStringTmp(e.name, nullptr);
                         if (!entryName || std::string_view(entryName) != SCHEDULE_ASSET_NAME) continue;
 
-                        // Build the replacement entry: keep name and cellIndex pointers
-                        // as-is (they remain valid in the game's memory), only update
-                        // the cell count and values pointer.
+                        // Replace the entry: keep name and cellIndex from the original
+                        // (they remain valid in game memory), update the cell data only.
                         T7StringTable replacement{};
-                        replacement.name        = e.name;                          // original name ptr
+                        replacement.name        = e.name;
                         replacement.columnCount = COLUMN_COUNT;
-                        replacement.rowCount    = (int32_t)numRows;
-                        replacement.values      = allocated + cellsOff;            // our injected cells
-                        replacement.cellIndex   = e.cellIndex;                     // leave original index
+                        replacement.rowCount    = static_cast<int32_t>(numRows);
+                        replacement.values      = allocated + cellsOff;
+                        replacement.cellIndex   = e.cellIndex;
 
                         uintptr_t entryAddr = poolDesc->pool + sizeof(T7StringTable) * i;
                         if (!proc.WriteMemory(entryAddr, &replacement, sizeof(replacement))) {
@@ -332,12 +351,11 @@ namespace {
                     if (!patched) {
                         throw std::runtime_error(
                             "Could not find 'gamedata/events/schedule.csv' in the StringTable pool.\n"
-                            "Make sure you are in the main menu (not loading a map) before injecting.");
+                            "Make sure you are at the main menu before injecting.");
                     }
 
-                    // Free the previous allocation if one exists, then store the new one.
-                    // If the game was restarted the old address is invalid; FreeMemory
-                    // will fail silently, which is acceptable.
+                    // Free the previous remote allocation if one exists.
+                    // If the game was restarted, FreeMemory fails silently - that is fine.
                     if (s_prevAllocAddr) {
                         proc.FreeMemory(s_prevAllocAddr, s_prevAllocSize);
                     }
@@ -359,33 +377,35 @@ namespace {
         ImGui::SameLine();
 
         if (ImGui::Button("Restore Original")) {
-            // Patch the schedule pointer back to null rowCount so the game re-reads
-            // from its own loaded data on next reload. The simplest approach that
-            // doesn't require us to store the original pointer is to write rowCount=0,
-            // which causes the event system to treat the table as empty.
             Process proc = L"BlackOps3.exe";
             try {
                 if (!proc || !proc.Open()) {
                     throw std::runtime_error("Can't open BlackOps3.exe");
                 }
 
+                uintptr_t poolsBase = FindXAssetPoolsBase(proc);
+                if (!poolsBase) {
+                    throw std::runtime_error("Could not locate g_XAssetPools via pattern scan.");
+                }
+
                 constexpr size_t STRINGTABLE_INDEX = bo3::pool::T7XAssetType::T7_ASSET_TYPE_STRINGTABLE;
-                uintptr_t poolDescAddr = proc[bo3::pool::xassetpools] + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
+                uintptr_t poolDescAddr = poolsBase + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
+
                 auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
-                if (!poolDesc) throw std::runtime_error("Can't read pool descriptor");
 
                 if (!poolDesc->pool || poolDesc->itemCount <= 0) {
                     throw std::runtime_error("StringTable pool not loaded; nothing to restore.");
                 }
 
-                auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemCount);
+                auto entries = proc.ReadMemoryArrayEx<T7StringTable>(
+                    poolDesc->pool, poolDesc->itemCount);
 
                 for (int32_t i = 0; i < poolDesc->itemCount; i++) {
                     if (!entries[i].name) continue;
                     auto n = proc.ReadStringTmp(entries[i].name, nullptr);
                     if (!n || std::string_view(n) != SCHEDULE_ASSET_NAME) continue;
 
-                    // Zero the rowCount so the schedule appears empty to the game.
+                    // Zero rowCount so the game treats the schedule as empty.
                     uintptr_t rowCountAddr = poolDesc->pool + sizeof(T7StringTable) * i
                         + offsetof(T7StringTable, rowCount);
                     int32_t zero = 0;
