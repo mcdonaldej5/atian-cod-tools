@@ -66,7 +66,6 @@ namespace {
 
     static uintptr_t s_prevAllocAddr = 0;
     static size_t    s_prevAllocSize = 0;
-    static DWORD     s_prevPID       = 0;
     static std::string s_notif{};
 
     // -----------------------------------------------------------------------
@@ -339,11 +338,12 @@ namespace {
                             "Make sure you are in the main menu (not loading a map) before injecting.");
                     }
 
-                    // Free the previous allocation for this process (avoids leaking remote memory).
-                    if (s_prevPID == proc.GetProcessId() && s_prevAllocAddr) {
+                    // Free the previous allocation if one exists, then store the new one.
+                    // If the game was restarted the old address is invalid; FreeMemory
+                    // will fail silently, which is acceptable.
+                    if (s_prevAllocAddr) {
                         proc.FreeMemory(s_prevAllocAddr, s_prevAllocSize);
                     }
-                    s_prevPID       = proc.GetProcessId();
                     s_prevAllocAddr = allocated;
                     s_prevAllocSize = allocatedSize;
 
