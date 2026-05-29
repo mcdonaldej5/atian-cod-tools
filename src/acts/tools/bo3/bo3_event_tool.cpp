@@ -169,12 +169,12 @@ namespace {
                     LOG_TRACE("  -> {}", ev);
                 }
 
-                Process bo3 = L"BlackOps3.exe";
+                Process proc = L"BlackOps3.exe";
                 uintptr_t allocated{};
                 size_t    allocatedSize{};
 
                 try {
-                    if (!bo3 || !bo3.Open()) {
+                    if (!proc || !proc.Open()) {
                         throw std::runtime_error("Can't open BlackOps3.exe - is the game running?");
                     }
 
@@ -262,7 +262,7 @@ namespace {
 
                     // Allocate memory in the remote process.
                     allocatedSize = rfile.size();
-                    allocated = bo3.AllocateMemory(allocatedSize);
+                    allocated = proc.AllocateMemory(allocatedSize);
                     if (!allocated) {
                         throw std::runtime_error(std::format("Can't allocate {} bytes in remote process", allocatedSize));
                     }
@@ -276,7 +276,7 @@ namespace {
                     }
 
                     // Write the whole block into the remote process.
-                    if (!bo3.WriteMemory(allocated, rfile.data(), allocatedSize)) {
+                    if (!proc.WriteMemory(allocated, rfile.data(), allocatedSize)) {
                         throw std::runtime_error(std::format("Can't write {} bytes to remote process", allocatedSize));
                     }
 
@@ -288,7 +288,7 @@ namespace {
                     constexpr size_t STRINGTABLE_INDEX = bo3::pool::T7XAssetType::T7_ASSET_TYPE_STRINGTABLE;
                     uintptr_t poolDescAddr = bo3::pool::xassetpools + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
 
-                    auto poolDesc = bo3.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
+                    auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
                     if (!poolDesc) {
                         throw std::runtime_error("Can't read StringTable pool descriptor");
                     }
@@ -300,7 +300,7 @@ namespace {
                     }
 
                     // Read all pool entries.
-                    auto entries = bo3.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemAllocCount);
+                    auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemAllocCount);
                     if (!entries) {
                         throw std::runtime_error("Can't read StringTable pool entries");
                     }
@@ -311,7 +311,7 @@ namespace {
                         const T7StringTable& e = entries[i];
                         if (!e.name) continue;
 
-                        auto entryName = bo3.ReadStringTmp(e.name, nullptr);
+                        auto entryName = proc.ReadStringTmp(e.name, nullptr);
                         if (!entryName || std::string_view(entryName) != SCHEDULE_ASSET_NAME) continue;
 
                         // Build the replacement entry: keep name and cellIndex pointers
@@ -325,7 +325,7 @@ namespace {
                         replacement.cellIndex   = e.cellIndex;                     // leave original index
 
                         uintptr_t entryAddr = poolDesc->pool + sizeof(T7StringTable) * i;
-                        if (!bo3.WriteMemory(entryAddr, &replacement, sizeof(replacement))) {
+                        if (!proc.WriteMemory(entryAddr, &replacement, sizeof(replacement))) {
                             throw std::runtime_error("Can't write patched StringTable entry");
                         }
 
@@ -340,10 +340,10 @@ namespace {
                     }
 
                     // Free the previous allocation for this process (avoids leaking remote memory).
-                    if (s_prevPID == bo3.GetProcessId() && s_prevAllocAddr) {
-                        bo3.FreeMemory(s_prevAllocAddr, s_prevAllocSize);
+                    if (s_prevPID == proc.GetProcessId() && s_prevAllocAddr) {
+                        proc.FreeMemory(s_prevAllocAddr, s_prevAllocSize);
                     }
-                    s_prevPID       = bo3.GetProcessId();
+                    s_prevPID       = proc.GetProcessId();
                     s_prevAllocAddr = allocated;
                     s_prevAllocSize = allocatedSize;
 
@@ -351,7 +351,7 @@ namespace {
                 }
                 catch (const std::runtime_error& err) {
                     if (allocated) {
-                        bo3.FreeMemory(allocated, allocatedSize);
+                        proc.FreeMemory(allocated, allocatedSize);
                     }
                     s_notif = err.what();
                     LOG_ERROR("BO3 event tool error: {}", err.what());
@@ -366,30 +366,30 @@ namespace {
             // from its own loaded data on next reload. The simplest approach that
             // doesn't require us to store the original pointer is to write rowCount=0,
             // which causes the event system to treat the table as empty.
-            Process bo3 = L"BlackOps3.exe";
+            Process proc = L"BlackOps3.exe";
             try {
-                if (!bo3 || !bo3.Open()) {
+                if (!proc || !proc.Open()) {
                     throw std::runtime_error("Can't open BlackOps3.exe");
                 }
 
                 constexpr size_t STRINGTABLE_INDEX = bo3::pool::T7XAssetType::T7_ASSET_TYPE_STRINGTABLE;
                 uintptr_t poolDescAddr = bo3::pool::xassetpools + STRINGTABLE_INDEX * sizeof(bo3::pool::T7XAssetPool);
-                auto poolDesc = bo3.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
+                auto poolDesc = proc.ReadMemoryObjectEx<bo3::pool::T7XAssetPool>(poolDescAddr);
                 if (!poolDesc) throw std::runtime_error("Can't read pool descriptor");
 
-                auto entries = bo3.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemAllocCount);
+                auto entries = proc.ReadMemoryArrayEx<T7StringTable>(poolDesc->pool, poolDesc->itemAllocCount);
                 if (!entries) throw std::runtime_error("Can't read pool entries");
 
                 for (int32_t i = 0; i < poolDesc->itemAllocCount; i++) {
                     if (!entries[i].name) continue;
-                    auto n = bo3.ReadStringTmp(entries[i].name, nullptr);
+                    auto n = proc.ReadStringTmp(entries[i].name, nullptr);
                     if (!n || std::string_view(n) != SCHEDULE_ASSET_NAME) continue;
 
                     // Zero the rowCount so the schedule appears empty to the game.
                     uintptr_t rowCountAddr = poolDesc->pool + sizeof(T7StringTable) * i
                         + offsetof(T7StringTable, rowCount);
                     int32_t zero = 0;
-                    bo3.WriteMemory(rowCountAddr, &zero, sizeof(zero));
+                    proc.WriteMemory(rowCountAddr, &zero, sizeof(zero));
                     s_notif = "Schedule cleared (restart map to fully restore).";
                     break;
                 }
