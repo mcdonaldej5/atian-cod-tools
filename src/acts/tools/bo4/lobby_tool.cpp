@@ -96,12 +96,12 @@ namespace {
 			}
 
 			// remove previous data
-			if (bo4.GetProcessId() == oldPid && oldAlloc) {
+			if (bo4.m_pid == oldPid && oldAlloc) {
 				bo4.FreeMemory(oldAlloc, oldAllocSize);
 				oldAlloc = 0;
 			}
 
-			oldPid = bo4.GetProcessId();
+			oldPid = bo4.m_pid;
 			oldAlloc = alloc;
 			oldAllocSize = sizeOut;
 
