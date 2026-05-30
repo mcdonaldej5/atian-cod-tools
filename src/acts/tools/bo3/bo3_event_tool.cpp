@@ -39,38 +39,23 @@ namespace {
     static_assert(sizeof(T7StringTable) == 0x20, "T7StringTable size mismatch");
 
     // -----------------------------------------------------------------------
-    // Locate g_XAssetPools at runtime via a pattern scan.
+    // g_XAssetPools location.
     //
-    // The pattern targets a call site of DB_LinkXAssetEntry that is followed
-    // immediately by a LEA loading the pool array base address:
+    // This RVA was resolved from a full-process memory dump of the community
+    // client: g_XAssetPools sits at (module_base + 0x93883F0). It was verified
+    // by following the pointer chain from the "gamedata/events/schedule.csv"
+    // StringTable up to its pool descriptor (asset type 48, itemSize 0x20).
     //
-    //   E8 ?? ?? ?? ?? 48 8D 2D ?? ?? ?? ?? 48 89 06
-    //   CALL DB_LinkXAssetEntry
-    //   LEA  rbp, [rip + g_XAssetPools]   <- 7-byte instruction starting at +5
-    //   MOV  [rsi], rbp
+    // proc[offset] adds the live module base at runtime, so ASLR is handled
+    // automatically - the RVA is constant across launches.
     //
-    // The 4-byte RIP-relative displacement sits at match+8.
-    // The instruction after the LEA (i.e., the RIP reference point) is at match+12.
-    // Absolute pool base = (match + 12) + *(int32_t*)(match + 8)
+    // NOTE: this offset is build-specific. If the client updates and the pool
+    // moves, re-derive the RVA from a fresh dump and update the constant below.
     // -----------------------------------------------------------------------
+    constexpr size_t G_XASSETPOOLS_RVA = 0x93883F0;
+
     uintptr_t FindXAssetPoolsBase(Process& proc) {
-        // Pattern: CALL ?? | LEA rbp,[rip+??] | MOV [rsi],rbp
-        constexpr const char* PATTERN =
-            "E8 ?? ?? ?? ?? 48 8D 2D ?? ?? ?? ?? 48 89 06";
-
-        uintptr_t match = proc.Scan(PATTERN);
-        if (!match) {
-            return 0;
-        }
-
-        // Read the signed 32-bit RIP-relative displacement embedded in the LEA.
-        int32_t disp{};
-        if (!proc.ReadMemory(&disp, match + 8, sizeof(disp))) {
-            return 0;
-        }
-
-        // RIP at the end of the LEA instruction = match + 5 (CALL) + 7 (LEA) = match + 12.
-        return static_cast<uintptr_t>(static_cast<int64_t>(match + 12) + disp);
+        return proc[G_XASSETPOOLS_RVA];
     }
 
     // -----------------------------------------------------------------------
