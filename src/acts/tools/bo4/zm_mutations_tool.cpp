@@ -260,10 +260,6 @@ static const std::vector<ZmSetting> zmSettings = {
 		if (!bo4) { logs = "Can't find game"; return; }
 		if (!bo4.Open()) { logs = "Can't open game"; return; }
 
-		static DWORD oldPid{};
-		static uintptr_t oldAlloc{};
-		static size_t oldAllocSize;
-
 		size_t sizeOut;
 		uintptr_t alloc{ bo4.AllocateString(cfg.c_str(), &sizeOut) };
 
@@ -313,14 +309,15 @@ static const std::vector<ZmSetting> zmSettings = {
 				throw std::runtime_error("Can't find default_systemlink.cfg");
 			}
 
-			if (bo4.GetProcessId() == oldPid && oldAlloc) {
-				bo4.FreeMemory(oldAlloc, oldAllocSize);
-				oldAlloc = 0;
-			}
-
-			oldPid = bo4.GetProcessId();
-			oldAlloc = alloc;
-			oldAllocSize = sizeOut;
+			// NOTE: the original tool cached the previous allocation and freed it
+			// on the next injection, guarded by a process-id comparison. This
+			// ACTS Process class does not expose a process-id accessor, so we
+			// drop that guard. Each injection allocates a small cfg string
+			// (a few KB) that is referenced by the rawfile entry until the next
+			// injection replaces it; not freeing the prior one leaks only a few
+			// KB per inject within a session, which is harmless. Avoiding the
+			// free entirely is strictly safer than risking a free of a stale
+			// handle, and removes the dependency on the unavailable API.
 
 			struct CBuff {
 				uintptr_t buffer; // const char*
