@@ -2,7 +2,7 @@
 #ifdef _WIN32
 #include "tools/tools_nui.hpp"
 #include <core/config.hpp>
-#include <tools/bo4/pool.hpp>
+#include <tools/pool.hpp>
 #include <games/bo4/pool.hpp>
 #include <games/bo4/offsets.hpp>
 #include <utils/memapi_calls.hpp>
